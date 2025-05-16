@@ -82,6 +82,25 @@ public class MainActivity extends AppCompatActivity {
     private static final int MAX_DATA_POINTS = 50; // Maximum number of data points to show
     private int dataPointCount = 0;
 
+    //Heart rate measure fields
+    private List<Long> peakTimestamps = new ArrayList<>();
+    private static final int PEAK_DETECTION_WINDOW = 10;
+    private static final int MIN_PEAK_DISTANCE_MS = 300; // Minimum 300ms between peaks (max 200 BPM)
+
+    private float[] recentValues = new float[PEAK_DETECTION_WINDOW];
+    private int valueIndex = 0;
+    private long lastPeakTime = 0;
+    private TextView heartRateTextView;
+
+    //Hand written function to look for peaks by judging drop-offs in data
+    private static float PEAK_MIN_DROPOFF_VALUE = 0.25f; //How much we expect the red value to drop by (at least) after a peak
+
+    private Long lastDropoffPeakTimestamp;
+    private List<Long> dropoffPeakTimestamps = new ArrayList<>();
+    private float dropoffMaxValue = 1f;
+    private static int DROPOFF_DETECTION_WINDOW = 200; //Or lowest expected heartbeat is once every two seconds
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -107,6 +126,8 @@ public class MainActivity extends AppCompatActivity {
         cameraExecutor = Executors.newSingleThreadExecutor();
 
         redColorChart = findViewById(R.id.red_color_chart);
+
+        heartRateTextView = findViewById(R.id.heart_rate_text);
         setupChart();
     }
 
@@ -438,6 +459,9 @@ public class MainActivity extends AppCompatActivity {
                 sb.append("Average Color: (").append(pixel_R).append(",").append(pixel_G).append(",").append(pixel_B).append(")\n");
                 //Our values seem to vary from 198 to 206 and our graph is spread up to 255 (for the moment)
                 updateRedColorChart(pixel_R);
+                //detectPeaks(pixel_R);
+                detectDropOffs(pixel_R);
+
                 /*
                 // Display a sample of pixels (top-left, center, bottom-right)
                 // Top-left pixel
@@ -469,5 +493,101 @@ public class MainActivity extends AppCompatActivity {
 
             pixelDataView.setText(sb.toString());
         });
+    }
+
+    private void detectDropOffs(float currentRedValue) {
+        long currentTime = System.currentTimeMillis();
+        boolean isPeak = false;
+
+        if (currentRedValue > dropoffMaxValue) {
+            dropoffMaxValue = currentRedValue;
+            lastDropoffPeakTimestamp = System.currentTimeMillis();
+        } else {
+            if (dropoffMaxValue - currentRedValue > PEAK_MIN_DROPOFF_VALUE) {   //we've got a dropoff happening
+                isPeak = true; //log our position
+            }
+        }
+
+        // If it's a peak and enough time has passed since last peak
+        if (isPeak && (currentTime - lastDropoffPeakTimestamp) > MIN_PEAK_DISTANCE_MS) {
+            dropoffMaxValue = 0;
+
+            peakTimestamps.add(currentTime);
+            lastDropoffPeakTimestamp = currentTime;
+
+            // Keep only recent peaks (last 10)
+            if (peakTimestamps.size() > 10) {
+                peakTimestamps.remove(0);
+            }
+
+            // Calculate heart rate if we have at least 2 peaks
+            if (peakTimestamps.size() >= 2) {
+                calculateHeartRate();
+            }
+        }
+    }
+
+    //Analysis of data and looking for heartrate peaks etc.
+    private void detectPeaks(float currentRedValue) {
+        long currentTime = System.currentTimeMillis();
+
+        // Store current value in circular buffer
+        recentValues[valueIndex] = currentRedValue;
+        valueIndex = (valueIndex + 1) % PEAK_DETECTION_WINDOW;
+
+        // Wait until buffer has enough data
+        if (frameCount < PEAK_DETECTION_WINDOW) {
+            return;
+        }
+
+        // Get middle position (where we check for peak)
+        int midPosition = (valueIndex + PEAK_DETECTION_WINDOW/2) % PEAK_DETECTION_WINDOW;
+        float midValue = recentValues[midPosition];
+
+        // Check if middle value is a peak (higher than all other values in window)
+        boolean isPeak = true;
+        for (int i = 0; i < PEAK_DETECTION_WINDOW; i++) {
+            if (i != midPosition && recentValues[i] >= midValue) {
+                isPeak = false;
+                break;
+            }
+        }
+
+        // If it's a peak and enough time has passed since last peak
+        if (isPeak && (currentTime - lastPeakTime) > MIN_PEAK_DISTANCE_MS) {
+            dropoffPeakTimestamps.add(currentTime);
+            lastPeakTime = currentTime;
+
+            // Keep only recent peaks (last 10)
+            if (peakTimestamps.size() > 10) {
+                peakTimestamps.remove(0);
+            }
+
+            // Calculate heart rate if we have at least 2 peaks
+            if (peakTimestamps.size() >= 2) {
+                calculateHeartRate();
+            }
+        }
+    }
+
+    private void calculateHeartRate() {
+        if (peakTimestamps.size() < 2) {
+            return;
+        }
+
+        // Calculate average time between peaks
+        long totalDuration = peakTimestamps.get(peakTimestamps.size() - 1) - peakTimestamps.get(0);
+        int numIntervals = peakTimestamps.size() - 1;
+
+        if (numIntervals > 0 && totalDuration > 0) {
+            double avgInterval = totalDuration / (double)numIntervals;
+            // Convert to heart rate (beats per minute)
+            final double heartRate = 60000.0 / avgInterval;
+
+            // Update UI
+            mainHandler.post(() -> {
+                heartRateTextView.setText(String.format("Heart Rate: %.1f BPM", heartRate));
+            });
+        }
     }
 }

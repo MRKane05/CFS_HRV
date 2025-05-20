@@ -2,6 +2,7 @@ package com.example.cfs_hrv;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
@@ -14,6 +15,7 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -21,6 +23,7 @@ import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.Image;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,11 +33,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
+import com.github.mikephil.charting.components.LimitLine;
+import com.google.android.material.math.MathUtils;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,13 +62,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+//Data type for peak points
+class PeakPoint {
+    public Long timestamp = 0L;
+    public Long intervalForward = 0L;
+    public Long intervalBackward = 0L;
+
+    public boolean validPoint = true;
+
+    public boolean forwardValid = true;
+
+    public boolean backwardValid = true;
+}
+
+class HRVResult {
+    public double rmssd;
+    public double confidence;
+
+    public HRVResult(double rmssd, double confidence) {
+        this.rmssd = rmssd;
+        this.confidence = confidence;
+    }
+}
+
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
     private static final String TAG = "CameraTorch";
 
+    //Config for sample window
+    private long sample_startTime = 0;
+    private long sample_stopTime = 0;
+
     // Sampling configuration
-    private static final int SAMPLE_INTERVAL_MS = 100; // Process frames every 100ms
+    private static final float START_SAMPLING_DELAY = 1000; //3 second delay to begin with
+    private static final int SAMPLE_INTERVAL_MS = 20; // Process frames every 100ms
     private static final int SAMPLE_WIDTH = 10; // Sample width for grid
     private static final int SAMPLE_HEIGHT = 10; // Sample height for grid
 
@@ -84,6 +121,12 @@ public class MainActivity extends AppCompatActivity {
 
     //Heart rate measure fields
     private List<Long> peakTimestamps = new ArrayList<>();
+
+    private List<Double> recordedPoints = new ArrayList<>();
+
+    private List<PeakPoint> allPeakPoints = new ArrayList<>();
+
+    private List<PeakPoint> allTroughPoints = new ArrayList<>();
     private static final int PEAK_DETECTION_WINDOW = 10;
     private static final int MIN_PEAK_DISTANCE_MS = 300; // Minimum 300ms between peaks (max 200 BPM)
 
@@ -93,14 +136,38 @@ public class MainActivity extends AppCompatActivity {
     private TextView heartRateTextView;
 
     //Hand written function to look for peaks by judging drop-offs in data
-    private static float PEAK_MIN_DROPOFF_VALUE = 0.25f; //How much we expect the red value to drop by (at least) after a peak
+    private static float PEAK_MIN_DROPOFF_VALUE = 0.2f; //How much we expect the red value to drop by (at least) after a peak
 
     private Long lastDropoffPeakTimestamp;
     private List<Long> dropoffPeakTimestamps = new ArrayList<>();
     private float dropoffMaxValue = 1f;
-    private static int DROPOFF_DETECTION_WINDOW = 200; //Or lowest expected heartbeat is once every two seconds
 
+    //Details for detecting troughs
+    private boolean bHasHadPeak = false;    //We can only record a trough after a peak
+    private static float TROUGH_MIN_GAIN_VALUE = 0.25f; //How much we expect the red value to drop by (at least) after a peak
 
+    private Long lastTroughTimestamp;
+    private List<Long> troughsTimestamps = new ArrayList<>();
+    private float troughMinValue = 255f;
+
+    //Handlers for frame stable settings
+    private float FRAME_STABLE_DURATION = 1;    //How many seconds do we need frame stable to consider the data good?
+    private float frame_max = 0;
+
+    private float frame_stable_max = 0;
+    private float frame_min = 255;
+
+    private float frame_stable_min = 255;
+
+    private float FRAME_STABLE_THRESHOLD = 1.5f; //How much can we shift and still be considered to be frame stable?
+
+    private float FRAME_STABLE_LERP_SPEED = 3f; //How quickly will our frame stable positions adjust?
+
+    private float MAX_HEART_PAUSE = 1000; //Maximum time between beats - anything that exceeds this will be dropped from the dataset
+
+    private float MIN_HEART_PAUSE = 500f; //Anything below this value will be thrown out (120bpm)
+
+    Long start_Time;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,6 +196,8 @@ public class MainActivity extends AppCompatActivity {
 
         heartRateTextView = findViewById(R.id.heart_rate_text);
         setupChart();
+
+        start_Time = System.currentTimeMillis();
     }
 
     private void setupChart() {
@@ -145,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
         Description description = new Description();
         description.setText("Red Color Values Over Time");
         description.setTextSize(12f);
+        description.setTextColor(Color.WHITE);
         redColorChart.setDescription(description);
 
         // X-axis setup
@@ -237,9 +307,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void analyze(@NonNull ImageProxy imageProxy) {
                         long currentTime = System.currentTimeMillis();
+                        long start_delay = currentTime - start_Time;
                         // Only process frames at specified interval to maintain performance
-                        if (currentTime - lastProcessedTime >= SAMPLE_INTERVAL_MS) {
-                            processImage(imageProxy);
+                        if (currentTime - lastProcessedTime >= SAMPLE_INTERVAL_MS && start_delay > 500L) {// && currentTime > start_Time + START_SAMPLING_DELAY) {
+                            //processImage(imageProxy);
+                            processImageFromYPlane(imageProxy);
                             lastProcessedTime = currentTime;
                         }
                         imageProxy.close(); // Important: must close the imageProxy
@@ -260,6 +332,14 @@ public class MainActivity extends AppCompatActivity {
 
                 // Update torch button state based on flashlight availability
                 torchButton.setEnabled(camera.getCameraInfo().hasFlashUnit());
+                if (camera.getCameraInfo().hasFlashUnit()) {
+                    //toggleTorch(); //Turn the torch on to begin with
+                    if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+                        isTorchOn = !isTorchOn;
+                        camera.getCameraControl().enableTorch(isTorchOn);
+                        torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
+                    }
+                }
 
             } catch (ExecutionException | InterruptedException e) {
                 Toast.makeText(this, "Error starting camera: " + e.getMessage(),
@@ -268,12 +348,63 @@ public class MainActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
+    boolean doingDataSample = false;
     private void toggleTorch() {
+        /*
         if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
             isTorchOn = !isTorchOn;
             camera.getCameraControl().enableTorch(isTorchOn);
             torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
         }
+        */
+        //Setup a user controlled sample window for ease of function
+        if (!doingDataSample) {
+            doingDataSample = true;
+            sample_startTime = System.currentTimeMillis();
+            torchButton.setText("Doing Data Sample");
+        } else {
+            torchButton.setText("Doing Data Analysis");
+            doingDataSample = false;
+            sample_stopTime = System.currentTimeMillis();
+            //List<Integer> peakPositions = processPPG(recordedPoints);
+            //A dump of all processes here so that I can pull data out of it for analysis
+            List<Double> smoothed = SavitzkyGolayFilter.smooth(recordedPoints, 5, 2);
+            List<Double> template = MatchedFilter.generateSimplePPGTemplate(15);
+            List<Double> matched = MatchedFilter.correlate(smoothed, template);
+
+            double mean = matched.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+            double stdDev = Math.sqrt(
+                    matched.stream().mapToDouble(v -> (v - mean) * (v - mean)).sum() / matched.size()
+            );
+
+            List<Integer> detectedPeaks = PeakDetector.detectPeaks(matched, mean + stdDev * 0.5, 30);
+
+
+            exportPeakPointsToCSV(this, recordedPoints, smoothed, detectedPeaks, "heartbeat_data.csv");
+/*
+            mainHandler.post(() -> {
+                heartRateTextView.setText(String.format(
+                        "Number of Peaks Detected: %d", peakPositions.size()
+                ));
+            });*/
+
+
+        }
+    }
+
+    public static List<Integer> processPPG(List<Double> rawPPG) {
+        List<Double> smoothed = SavitzkyGolayFilter.smooth(rawPPG, 5, 2);
+        List<Double> template = MatchedFilter.generateSimplePPGTemplate(15);
+        List<Double> matched = MatchedFilter.correlate(smoothed, template);
+
+        double mean = matched.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        double stdDev = Math.sqrt(
+                matched.stream().mapToDouble(v -> (v - mean) * (v - mean)).sum() / matched.size()
+        );
+
+        List<Integer> detectedPeaks = PeakDetector.detectPeaks(matched, mean + stdDev * 0.5, 30);
+
+        return PeakDetector.detectPeaks(matched, mean + stdDev * 0.5, 30);
     }
 
     private boolean allPermissionsGranted() {
@@ -390,6 +521,64 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private float processImageFromYPlane(ImageProxy imageProxy) {
+        @OptIn(markerClass = ExperimentalGetImage.class) Image image = imageProxy.getImage();
+        if (image == null) {
+            return 0;
+        }
+
+        try {
+            Image.Plane yPlane = image.getPlanes()[0]; // Y plane is always at index 0
+
+            ByteBuffer buffer = yPlane.getBuffer();
+            int width = image.getWidth();
+            int height = image.getHeight();
+            int rowStride = yPlane.getRowStride();
+
+            // Sum the Y values across a sampled region (for performance)
+            long totalY = 0;
+            int sampleCount = 0;
+
+            // Use a small grid sampling instead of every pixel to keep performance reasonable
+            int stepDivisor = 20;
+            int stepX = width / stepDivisor;
+            int stepY = height / stepDivisor;
+
+            for (int y = 0; y < height; y += stepY) {
+                for (int x = 0; x < width; x += stepX) {
+                    int index = y * rowStride + x;
+                    if (index < buffer.capacity()) {
+                        int luminance = buffer.get(index) & 0xFF; // Convert unsigned byte to int
+                        totalY += luminance;
+                        sampleCount++;
+                    }
+                }
+            }
+
+            double averageLuminance = sampleCount > 0 ? (double) totalY / sampleCount : 0f;
+
+            if (doingDataSample) {
+                recordedPoints.add(averageLuminance);
+            }
+
+            updateRedColorChart((float)averageLuminance);
+            //detectPeaks(pixel_R);
+            detectDropOffs((float)averageLuminance);
+            detectTroughs((float)averageLuminance);
+
+            Log.d("LUMINANCE", "Average Y value: " + averageLuminance);
+
+            // TODO: Use `averageLuminance` as your signal for heartbeat detection
+            return (float)averageLuminance;
+        } catch (Exception e) {
+            Log.e("LUMINANCE", "Error reading Y plane", e);
+        } finally {
+            imageProxy.close(); // Very important: must close to avoid memory leak
+        }
+        return 0;
+    }
+
+
     /**
      * Convert ImageProxy to Bitmap for pixel processing
      */
@@ -461,50 +650,49 @@ public class MainActivity extends AppCompatActivity {
                 updateRedColorChart(pixel_R);
                 //detectPeaks(pixel_R);
                 detectDropOffs(pixel_R);
-
-                /*
-                // Display a sample of pixels (top-left, center, bottom-right)
-                // Top-left pixel
-                int topLeft = pixelGrid[0][0];
-                int r = Color.red(topLeft);
-                int g = Color.green(topLeft);
-                int b = Color.blue(topLeft);
-                sb.append("Top-Left: RGB(").append(r).append(",").append(g).append(",").append(b).append(")\n");
-
-                // Center pixel (if exists)
-                if (SAMPLE_WIDTH > 2 && SAMPLE_HEIGHT > 2) {
-                    int centerX = SAMPLE_WIDTH / 2;
-                    int centerY = SAMPLE_HEIGHT / 2;
-                    int center = pixelGrid[centerX][centerY];
-                    r = Color.red(center);
-                    g = Color.green(center);
-                    b = Color.blue(center);
-                    sb.append("Center: RGB(").append(r).append(",").append(g).append(",").append(b).append(")\n");
-                }
-
-                // Bottom-right pixel
-                int bottomRight = pixelGrid[SAMPLE_WIDTH-1][SAMPLE_HEIGHT-1];
-                r = Color.red(bottomRight);
-                g = Color.green(bottomRight);
-                b = Color.blue(bottomRight);
-                sb.append("Bottom-Right: RGB(").append(r).append(",").append(g).append(",").append(b).append(")");
-                */
+                detectTroughs(pixel_R);
             }
 
             pixelDataView.setText(sb.toString());
         });
     }
 
+    private void addMarkerLine(int peakIndex, int markerColor, String label) {
+        LimitLine limit = new LimitLine(peakIndex, label);
+        limit.setLineColor(markerColor);
+        limit.setLineWidth(2f);
+        limit.enableDashedLine(10f, 10f, 0f);
+        limit.setLabelPosition(LimitLine.LimitLabelPosition.RIGHT_TOP);
+
+        XAxis bottomAxis = redColorChart.getXAxis();
+        bottomAxis.addLimitLine(limit);
+    }
+
+    private int lastPeakPoint = 0;
     private void detectDropOffs(float currentRedValue) {
         long currentTime = System.currentTimeMillis();
         boolean isPeak = false;
 
+        //Handle the zooming in of our graph
+        frame_stable_max = Math.max(frame_stable_max, currentRedValue);
+        frame_stable_max = MathUtils.lerp(frame_stable_max, currentRedValue, FRAME_STABLE_LERP_SPEED/100);
+
+        frame_stable_min = Math.min(frame_stable_min, currentRedValue);
+        frame_stable_min = MathUtils.lerp(frame_stable_min, currentRedValue, FRAME_STABLE_LERP_SPEED/100);
+
+        YAxis leftAxis = redColorChart.getAxisLeft();
+        leftAxis.setAxisMinimum(frame_stable_min-2);  //0
+        leftAxis.setAxisMaximum(frame_stable_max+2);  //255
+        //Zooming function complete :)
+
         if (currentRedValue > dropoffMaxValue) {
             dropoffMaxValue = currentRedValue;
+            lastPeakPoint = dataPointCount; //Keep a ticker on where our peak should be
             lastDropoffPeakTimestamp = System.currentTimeMillis();
         } else {
-            if (dropoffMaxValue - currentRedValue > PEAK_MIN_DROPOFF_VALUE) {   //we've got a dropoff happening
+            if (dropoffMaxValue - currentRedValue > PEAK_MIN_DROPOFF_VALUE && !bHasHadPeak) {   //we've got a dropoff happening
                 isPeak = true; //log our position
+                bHasHadPeak = true;
             }
         }
 
@@ -513,8 +701,13 @@ public class MainActivity extends AppCompatActivity {
             dropoffMaxValue = 0;
 
             peakTimestamps.add(currentTime);
-            lastDropoffPeakTimestamp = currentTime;
 
+            PeakPoint newPeakPoint = new PeakPoint();
+            newPeakPoint.timestamp = currentTime;
+            allPeakPoints.add(newPeakPoint);
+
+            lastDropoffPeakTimestamp = currentTime;
+            addMarkerLine(lastPeakPoint, Color.YELLOW, "Peak");
             // Keep only recent peaks (last 10)
             if (peakTimestamps.size() > 10) {
                 peakTimestamps.remove(0);
@@ -522,50 +715,267 @@ public class MainActivity extends AppCompatActivity {
 
             // Calculate heart rate if we have at least 2 peaks
             if (peakTimestamps.size() >= 2) {
-                calculateHeartRate();
+                //calculateHeartRate();
+            }
+
+            /*
+            if (allPeakPoints.size() % 20 == 0) {   //Run an analysis every 20 samples
+                prepareHRData();
+                filterOutliersFromPeakPoints();
+                displayCalculatedInvervalVariance();
+                //exportPeakPointsToCSV(this, allPeakPoints, "heartbeat_data.csv");
+            }*/
+/*
+            if (allTroughPoints.size() % 20 ==0) {
+
+                prepareHRData();
+                filterOutliersFromTroughPoints();
+                displayCalculatedTroughIntervalVariance();
+            }*/
+
+        }
+    }
+
+    private void displayCalculatedTroughIntervalVariance() {
+        int discardedPoints = 0;
+        int validPoints = 0;
+        Long averageValue = 0L;
+        for (PeakPoint p : allTroughPoints) {
+            if (p.validPoint) {
+                averageValue += p.intervalForward;
+                validPoints ++;
+            } else {
+                discardedPoints ++;
+            }
+        }
+
+        averageValue /= Long.valueOf(validPoints);
+
+        HRVResult HRV = calculateHRV();
+        Long finalAverageValue = averageValue;
+        int finalDiscardedPoints = discardedPoints;
+        int finalValidPoints = validPoints;
+        mainHandler.post(() -> {
+            //heartRateTextView.setText(String.format("Calculated interval: %d BPM", finalAverageValue));
+            heartRateTextView.setText(String.format(
+                    "Calculated interval: %d ms  discarded points: %d  valid points: %d Calculated HRV RMSSD: %.2f  confidence: %.1f%%",
+                    finalAverageValue, finalDiscardedPoints, finalValidPoints, HRV.rmssd, HRV.confidence
+            ));
+        });
+    }
+
+    private void displayCalculatedInvervalVariance() {
+        int discardedPoints = 0;
+        int validPoints = 0;
+        Long averageValue = 0L;
+        for (PeakPoint p : allPeakPoints) {
+            if (p.validPoint) {
+                averageValue += p.intervalForward;
+                validPoints ++;
+            } else {
+                discardedPoints ++;
+            }
+        }
+
+        averageValue /= Long.valueOf(validPoints);
+
+        HRVResult HRV = calculateHRV();
+        Long finalAverageValue = averageValue;
+        int finalDiscardedPoints = discardedPoints;
+        int finalValidPoints = validPoints;
+        mainHandler.post(() -> {
+           //heartRateTextView.setText(String.format("Calculated interval: %d BPM", finalAverageValue));
+            heartRateTextView.setText(String.format(
+                    "Calculated interval: %d ms  discarded points: %d  valid points: %d Calculated HRV RMSSD: %.2f  confidence: %.1f%%",
+                    finalAverageValue, finalDiscardedPoints, finalValidPoints, HRV.rmssd, HRV.confidence
+            ));
+        });
+    }
+
+    private HRVResult calculateHRV() {
+        List<Long> intervals = new ArrayList<>();
+
+        int validCount = 0;
+        for (PeakPoint point : allPeakPoints) {
+            //if (point.validPoint && point.intervalForward > 0) {
+            if (true) {
+                intervals.add(point.intervalForward); // in milliseconds
+                validCount++;
+            }
+        }
+
+        int totalCount = allPeakPoints.size();
+        if (intervals.size() < 2) {
+            return new HRVResult(0, 0); // Not enough data
+        }
+
+        // Calculate the root mean square of successive differences (RMSSD)
+        double sumSqDiff = 0;
+        for (int i = 0; i < intervals.size() - 1; i++) {
+            double diff = intervals.get(i) - intervals.get(i + 1); // in ms
+            sumSqDiff += diff * diff;
+        }
+
+        double rmssd = Math.sqrt(sumSqDiff / (intervals.size() - 1)); // result in ms
+
+        // Confidence is percentage of valid points out of all points
+        double confidence = (totalCount > 0) ? (validCount * 100.0 / totalCount) : 0;
+
+        return new HRVResult(rmssd, confidence);
+    }
+
+    private void prepareHRData() {
+        //Populate our data for forward and backward
+        for (int i=1; i<allPeakPoints.size()-1; i++) {
+            if (allPeakPoints.get(i).intervalForward == 0L) {
+                allPeakPoints.get(i).intervalForward = allPeakPoints.get(i+1).timestamp - allPeakPoints.get(i).timestamp;
+            }
+            if (allPeakPoints.get(i).intervalBackward == 0L) {
+                allPeakPoints.get(i).intervalBackward = allPeakPoints.get(i).timestamp - allPeakPoints.get(i-1).timestamp;
+            }
+        }
+
+        //Go through and sort out our troughs
+        for (int i=1; i<allTroughPoints.size()-1; i++) {
+            if (allTroughPoints.get(i).intervalForward == 0L) {
+                allTroughPoints.get(i).intervalForward = allTroughPoints.get(i+1).timestamp - allTroughPoints.get(i).timestamp;
+            }
+            if (allTroughPoints.get(i).intervalBackward == 0L) {
+                allTroughPoints.get(i).intervalBackward = allTroughPoints.get(i).timestamp - allTroughPoints.get(i-1).timestamp;
             }
         }
     }
 
-    //Analysis of data and looking for heartrate peaks etc.
-    private void detectPeaks(float currentRedValue) {
-        long currentTime = System.currentTimeMillis();
+    private void filterOutliersFromPeakPoints() {
+        if (allPeakPoints == null || allPeakPoints.size() < 3) return; // Need enough data to analyze
 
-        // Store current value in circular buffer
-        recentValues[valueIndex] = currentRedValue;
-        valueIndex = (valueIndex + 1) % PEAK_DETECTION_WINDOW;
+        List<Long> intervals = new ArrayList<>();
 
-        // Wait until buffer has enough data
-        if (frameCount < PEAK_DETECTION_WINDOW) {
-            return;
+        // Collect both forward and backward intervals from all points
+        for (PeakPoint p : allPeakPoints) {
+            intervals.add(p.intervalForward);
+            intervals.add(p.intervalBackward);
         }
 
-        // Get middle position (where we check for peak)
-        int midPosition = (valueIndex + PEAK_DETECTION_WINDOW/2) % PEAK_DETECTION_WINDOW;
-        float midValue = recentValues[midPosition];
+        // Calculate mean and standard deviation
+        double mean = intervals.stream().mapToDouble(Long::doubleValue).average().orElse(0);
+        double stddev = Math.sqrt(intervals.stream()
+                .mapToDouble(val -> Math.pow(val - mean, 2))
+                .average().orElse(0));
 
-        // Check if middle value is a peak (higher than all other values in window)
-        boolean isPeak = true;
-        for (int i = 0; i < PEAK_DETECTION_WINDOW; i++) {
-            if (i != midPosition && recentValues[i] >= midValue) {
-                isPeak = false;
-                break;
+        // Define Z-score threshold for outlier detection
+        double zThreshold = 2.5;
+        //double zThreshold = 1.5; //A much tighter outlier control. We should  have a skewed population anyway
+
+        // Flag invalid points
+        //for (PeakPoint p : allPeakPoints) {
+        for (int i=0; i<allPeakPoints.size(); i++) {
+            PeakPoint p = allPeakPoints.get(i);
+            double zBack = stddev > 0 ? Math.abs((p.intervalBackward - mean) / stddev) : 0;
+            double zFwd = stddev > 0 ? Math.abs((p.intervalForward - mean) / stddev) : 0;
+
+            //p.validPoint = zBack <= zThreshold && zFwd <= zThreshold;
+            if (zBack <= zThreshold && zFwd <= zThreshold && p.validPoint && p.intervalForward > MIN_HEART_PAUSE && p.intervalForward < MAX_HEART_PAUSE) {
+                //This is fine, this point is valid and should remain unchanged
+            } else {
+                p.validPoint = false;
+                //Invalidate point behind and point forward (if avaliable)
+                if (i > 0) {
+                    allPeakPoints.get((i-1)).forwardValid = false;
+                }
+                /*
+                if (i<allPeakPoints.size()-2) {
+                    allPeakPoints.get((i+1)).backwardValid = false;
+                }*/
+            }
+            /*
+            if (p.intervalForward > MAX_HEART_PAUSE && p.validPoint && p.intervalForward > MIN_HEART_PAUSE) {    //A threshold to see if this point should be excluded from the dataset also
+                p.validPoint = false;
+            }*/
+        }
+    }
+
+    private void filterOutliersFromTroughPoints() {
+        if (allTroughPoints == null || allTroughPoints.size() < 3) return; // Need enough data to analyze
+
+        List<Long> intervals = new ArrayList<>();
+
+        // Collect both forward and backward intervals from all points
+        for (PeakPoint p : allTroughPoints) {
+            intervals.add(p.intervalForward);
+            intervals.add(p.intervalBackward);
+        }
+
+        // Calculate mean and standard deviation
+        double mean = intervals.stream().mapToDouble(Long::doubleValue).average().orElse(0);
+        double stddev = Math.sqrt(intervals.stream()
+                .mapToDouble(val -> Math.pow(val - mean, 2))
+                .average().orElse(0));
+
+        // Define Z-score threshold for outlier detection
+        double zThreshold = 2.5;
+        //double zThreshold = 1.5; //A much tighter outlier control. We should  have a skewed population anyway
+
+        // Flag invalid points
+        //for (PeakPoint p : allPeakPoints) {
+        for (int i=0; i<allTroughPoints.size(); i++) {
+            PeakPoint p = allTroughPoints.get(i);
+            double zBack = stddev > 0 ? Math.abs((p.intervalBackward - mean) / stddev) : 0;
+            double zFwd = stddev > 0 ? Math.abs((p.intervalForward - mean) / stddev) : 0;
+
+            //p.validPoint = zBack <= zThreshold && zFwd <= zThreshold;
+            if (zBack <= zThreshold && zFwd <= zThreshold && p.validPoint && p.intervalForward > MIN_HEART_PAUSE && p.intervalForward < MAX_HEART_PAUSE) {
+                //This is fine, this point is valid and should remain unchanged
+            } else {
+                p.validPoint = false;
+                //Invalidate point behind and point forward (if avaliable)
+                if (i > 0) {
+                    allTroughPoints.get((i-1)).forwardValid = false;
+                }
+                /*
+                if (i<allPeakPoints.size()-2) {
+                    allPeakPoints.get((i+1)).backwardValid = false;
+                }*/
+            }
+
+            /*
+            if (p.intervalForward > MAX_HEART_PAUSE && p.validPoint && p.intervalForward > MIN_HEART_PAUSE) {    //A threshold to see if this point should be excluded from the dataset also
+                p.validPoint = false;
+            }*/
+        }
+    }
+
+    private int lastTroughPoint = 0;
+    private void detectTroughs(float currentRedValue) {
+        long currentTime = System.currentTimeMillis();
+        boolean isTrough = false;
+
+        if (currentRedValue < troughMinValue) {
+            troughMinValue = currentRedValue;
+            lastTroughPoint = dataPointCount; //Keep a ticker on where our trough should be
+            lastTroughTimestamp = System.currentTimeMillis();
+        } else {
+            if (currentRedValue - troughMinValue > TROUGH_MIN_GAIN_VALUE && bHasHadPeak) {   //we've got a dropoff happening
+                isTrough = true; //log our position
+                bHasHadPeak = false;    //Flip our toggle to have the system now look for a peak
             }
         }
 
         // If it's a peak and enough time has passed since last peak
-        if (isPeak && (currentTime - lastPeakTime) > MIN_PEAK_DISTANCE_MS) {
-            dropoffPeakTimestamps.add(currentTime);
-            lastPeakTime = currentTime;
+        if (isTrough && (currentTime - lastTroughTimestamp) > MIN_PEAK_DISTANCE_MS) {
+            troughMinValue = 4096;
 
+            //Keep track of our Trough points to assess usefulness
+            PeakPoint newTroughPoint = new PeakPoint();
+            newTroughPoint.timestamp = currentTime;
+            allTroughPoints.add(newTroughPoint);
+
+            troughsTimestamps.add(currentTime);
+            lastTroughTimestamp = currentTime;
+            addMarkerLine(lastTroughPoint, Color.BLUE, "Trough");   //this errs towards false positives
             // Keep only recent peaks (last 10)
-            if (peakTimestamps.size() > 10) {
-                peakTimestamps.remove(0);
-            }
-
-            // Calculate heart rate if we have at least 2 peaks
-            if (peakTimestamps.size() >= 2) {
-                calculateHeartRate();
+            if (troughsTimestamps.size() > 10) {
+                troughsTimestamps.remove(0);
             }
         }
     }
@@ -588,6 +998,39 @@ public class MainActivity extends AppCompatActivity {
             mainHandler.post(() -> {
                 heartRateTextView.setText(String.format("Heart Rate: %.1f BPM", heartRate));
             });
+        }
+    }
+
+    private void exportPeakPointsToCSV(Context context, List<Double> recordedPoints, List<Double> filteredPoints, List<Integer> peakPoints, String filename) {
+        File exportDir = context.getExternalFilesDir(null); // App-specific external storage
+        if (exportDir == null) {
+            Log.e("CSV_EXPORT", "External storage not available.");
+            return;
+        }
+
+        File file = new File(exportDir, filename);
+
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("recorded,filtered,peak\n"); // CSV Header
+            for (int i=0; i<recordedPoints.size(); i++) {
+                writer.write(String.format(Locale.US, "%f,%f,%d\n",
+                        recordedPoints.get(i),
+                        filteredPoints.size() > i ? filteredPoints.get(i) : 0,
+                        peakPoints.size() > i ? peakPoints.get(i) : -1));
+            }
+            /*
+            for (PeakPoint point : peakPoints) {
+                if (point.validPoint) {
+                    writer.write(String.format(Locale.US, "%d,%d,%d\n",
+                            point.timestamp,
+                            point.intervalBackward,
+                            point.intervalForward));
+                }
+            }*/
+
+            Log.i("CSV_EXPORT", "Exported to: " + file.getAbsolutePath());
+        } catch (IOException e) {
+            Log.e("CSV_EXPORT", "Error writing CSV", e);
         }
     }
 }

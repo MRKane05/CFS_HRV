@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Sampling configuration
     private static final float START_SAMPLING_DELAY = 1000; //3 second delay to begin with
-    private static final int SAMPLE_INTERVAL_MS = 20; // Process frames every 100ms
+    private static final long SAMPLE_INTERVAL_MS = (long) 33.33333333; // Process frames every 100ms
     private static final int SAMPLE_WIDTH = 10; // Sample width for grid
     private static final int SAMPLE_HEIGHT = 10; // Sample height for grid
 
@@ -399,7 +399,7 @@ public class MainActivity extends AppCompatActivity {
             doingDataSample = false;
             sample_stopTime = System.currentTimeMillis();
             HRVMeasurementSystem.HRVMetrics results =
-                    HRVMeasurementSystem.analyzeHRV(dataPointList, SAMPLE_INTERVAL_MS);
+                    HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
 
             heartRateTextView.setText(results.toString());
             //Finally we need to display our results

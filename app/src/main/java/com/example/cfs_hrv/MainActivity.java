@@ -402,7 +402,7 @@ public class MainActivity extends AppCompatActivity {
                     HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
 
             heartRateTextView.setText(results.toString());
-            exportPeakPointsToCSV(this, HRVMeasurementSystem.HBPeaks, "ClaudeHeartPeaks.txt");
+            exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
             //peaks
             //Finally we need to display our results
         }

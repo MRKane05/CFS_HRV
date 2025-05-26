@@ -143,18 +143,17 @@ public class HRVMeasurementSystem {
     }
 
     /**
-     * Detect R-R intervals using adaptive peak/trough detection
+     * Detect R-R intervals using adaptive trough detection (recommended for PPG)
      */
-    public static List<Integer> HBPeaks = new ArrayList<>();
+    public static List<Integer> troughs= new ArrayList<>();
     private static List<Long> detectRRIntervals(List<DataPoint> data, double samplingRate) {
-        //List<Integer> peaks = findAdaptivePeaks(data, samplingRate);
-        HBPeaks = findAdaptivePeaks(data, samplingRate);
+        troughs = findAdaptiveTroughs(data, samplingRate);
         List<Long> rrIntervals = new ArrayList<>();
 
-        for (int i = 1; i < HBPeaks.size(); i++) {
-            int prevPeak = HBPeaks.get(i - 1);
-            int currentPeak = HBPeaks.get(i);
-            long interval = data.get(currentPeak).timestamp - data.get(prevPeak).timestamp;
+        for (int i = 1; i < troughs.size(); i++) {
+            int prevTrough = troughs.get(i - 1);
+            int currentTrough = troughs.get(i);
+            long interval = data.get(currentTrough).timestamp - data.get(prevTrough).timestamp;
             rrIntervals.add(interval);
         }
 
@@ -162,12 +161,10 @@ public class HRVMeasurementSystem {
     }
 
     /**
-     * Adaptive peak detection with dynamic thresholds
+     * Adaptive trough detection with dynamic thresholds (better for PPG signals)
      */
-
-    final static double peakSensitivity = 0.2;
-    private static List<Integer> findAdaptivePeaks(List<DataPoint> data, double samplingRate) {
-        List<Integer> peaks = new ArrayList<>();
+    private static List<Integer> findAdaptiveTroughs(List<DataPoint> data, double samplingRate) {
+        List<Integer> troughs = new ArrayList<>();
 
         // Calculate adaptive parameters
         int minDistance = (int) (0.4 * samplingRate); // Minimum 0.4s between beats (150 BPM max)
@@ -188,30 +185,30 @@ public class HRVMeasurementSystem {
             }
             localStd = Math.sqrt(localStd / windowSize);
 
-            // Adaptive threshold
-            double threshold = localMean + peakSensitivity * localStd; // Adjust multiplier as needed
+            // Adaptive threshold for troughs (below mean)
+            double threshold = localMean - 0.2 * localStd; // Look for values below mean
 
-            // Check if current point is a peak
-            if (data.get(i).value > threshold && isPeakCandidate(data, i, minDistance)) {
-                // Ensure minimum distance from last peak
-                if (peaks.isEmpty() || i - peaks.get(peaks.size() - 1) >= minDistance) {
-                    peaks.add(i);
+            // Check if current point is a trough
+            if (data.get(i).value < threshold && isTroughCandidate(data, i, minDistance)) {
+                // Ensure minimum distance from last trough
+                if (troughs.isEmpty() || i - troughs.get(troughs.size() - 1) >= minDistance) {
+                    troughs.add(i);
                 }
             }
         }
 
-        return peaks;
+        return troughs;
     }
 
     /**
-     * Check if a point is a local maximum
+     * Check if a point is a local minimum (trough)
      */
-    private static boolean isPeakCandidate(List<DataPoint> data, int index, int minDistance) {
-        int searchRadius = Math.min(minDistance / 6, 5); // Small search radius for local maximum
+    private static boolean isTroughCandidate(List<DataPoint> data, int index, int minDistance) {
+        int searchRadius = Math.min(minDistance / 6, 5); // Small search radius for local minimum
 
         for (int i = Math.max(0, index - searchRadius);
              i <= Math.min(data.size() - 1, index + searchRadius); i++) {
-            if (i != index && data.get(i).value >= data.get(index).value) {
+            if (i != index && data.get(i).value <= data.get(index).value) {
                 return false;
             }
         }
@@ -313,12 +310,13 @@ public class HRVMeasurementSystem {
     /**
      * Example usage and testing
      */
+    /*
     public static void main(String[] args) {
         // Example usage
         List<DataPoint> sampleData = generateSampleData();
         HRVMetrics results = analyzeHRV(sampleData, 30.0); // Assuming 30 FPS camera
         System.out.println(results);
-    }
+    }*/
 
     private static List<DataPoint> generateSampleData() {
         // Generate sample PPG-like data for testing

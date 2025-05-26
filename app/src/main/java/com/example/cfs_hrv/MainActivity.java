@@ -402,6 +402,8 @@ public class MainActivity extends AppCompatActivity {
                     HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
 
             heartRateTextView.setText(results.toString());
+            exportPeakPointsToCSV(this, HRVMeasurementSystem.HBPeaks, "ClaudeHeartPeaks.txt");
+            //peaks
             //Finally we need to display our results
         }
     }
@@ -532,6 +534,8 @@ public class MainActivity extends AppCompatActivity {
             updateRedColorChart((float)averageLuminance);
 
             if (doingDataSample) {
+                recordedPoints.add(averageLuminance);
+
                 HRVMeasurementSystem.DataPoint newDataPoint = new HRVMeasurementSystem.DataPoint(averageLuminance, System.currentTimeMillis());
                 dataPointList.add(newDataPoint);
             }
@@ -840,7 +844,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void exportPeakPointsToCSV(Context context, List<Double> recordedPoints, List<Double> filteredPoints, List<Integer> peakPoints, String filename) {
+    private void exportPeakPointsToCSV(Context context, List<Integer> peakPoints, String filename) {
         File exportDir = context.getExternalFilesDir(null); // App-specific external storage
         if (exportDir == null) {
             Log.e("CSV_EXPORT", "External storage not available.");
@@ -852,21 +856,11 @@ public class MainActivity extends AppCompatActivity {
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("recorded,filtered,peak\n"); // CSV Header
             for (int i=0; i<recordedPoints.size(); i++) {
-                writer.write(String.format(Locale.US, "%f,%f,%d\n",
+                writer.write(String.format(Locale.US, "%f,%d\n",
                         recordedPoints.get(i),
-                        filteredPoints.size() > i ? filteredPoints.get(i) : 0,
                         peakPoints.contains(i) ? 80: 76));
                         //peakPoints.size() > i ? peakPoints.get(i) : -1));
             }
-            /*
-            for (PeakPoint point : peakPoints) {
-                if (point.validPoint) {
-                    writer.write(String.format(Locale.US, "%d,%d,%d\n",
-                            point.timestamp,
-                            point.intervalBackward,
-                            point.intervalForward));
-                }
-            }*/
 
             Log.i("CSV_EXPORT", "Exported to: " + file.getAbsolutePath());
         } catch (IOException e) {

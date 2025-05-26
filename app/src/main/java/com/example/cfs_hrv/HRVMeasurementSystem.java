@@ -145,13 +145,15 @@ public class HRVMeasurementSystem {
     /**
      * Detect R-R intervals using adaptive peak/trough detection
      */
+    public static List<Integer> HBPeaks = new ArrayList<>();
     private static List<Long> detectRRIntervals(List<DataPoint> data, double samplingRate) {
-        List<Integer> peaks = findAdaptivePeaks(data, samplingRate);
+        //List<Integer> peaks = findAdaptivePeaks(data, samplingRate);
+        HBPeaks = findAdaptivePeaks(data, samplingRate);
         List<Long> rrIntervals = new ArrayList<>();
 
-        for (int i = 1; i < peaks.size(); i++) {
-            int prevPeak = peaks.get(i - 1);
-            int currentPeak = peaks.get(i);
+        for (int i = 1; i < HBPeaks.size(); i++) {
+            int prevPeak = HBPeaks.get(i - 1);
+            int currentPeak = HBPeaks.get(i);
             long interval = data.get(currentPeak).timestamp - data.get(prevPeak).timestamp;
             rrIntervals.add(interval);
         }
@@ -162,6 +164,8 @@ public class HRVMeasurementSystem {
     /**
      * Adaptive peak detection with dynamic thresholds
      */
+
+    final static double peakSensitivity = 0.2;
     private static List<Integer> findAdaptivePeaks(List<DataPoint> data, double samplingRate) {
         List<Integer> peaks = new ArrayList<>();
 
@@ -185,7 +189,7 @@ public class HRVMeasurementSystem {
             localStd = Math.sqrt(localStd / windowSize);
 
             // Adaptive threshold
-            double threshold = localMean + 0.5 * localStd; // Adjust multiplier as needed
+            double threshold = localMean + peakSensitivity * localStd; // Adjust multiplier as needed
 
             // Check if current point is a peak
             if (data.get(i).value > threshold && isPeakCandidate(data, i, minDistance)) {
@@ -203,7 +207,7 @@ public class HRVMeasurementSystem {
      * Check if a point is a local maximum
      */
     private static boolean isPeakCandidate(List<DataPoint> data, int index, int minDistance) {
-        int searchRadius = Math.min(minDistance / 4, 10); // Small search radius for local maximum
+        int searchRadius = Math.min(minDistance / 6, 5); // Small search radius for local maximum
 
         for (int i = Math.max(0, index - searchRadius);
              i <= Math.min(data.size() - 1, index + searchRadius); i++) {

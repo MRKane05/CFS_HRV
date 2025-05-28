@@ -218,6 +218,9 @@ public class HRVMeasurementSystem {
     /**
      * Clean R-R intervals by removing outliers and artifacts
      */
+
+    private static final float stdRange = 2f;
+    //Could do with something that keeps an eye on the BPM of the user and uses that to scram values...
     private static List<Long> cleanRRIntervals(List<Long> rrIntervals) {
         if (rrIntervals.size() < 3) return rrIntervals;
 
@@ -229,9 +232,9 @@ public class HRVMeasurementSystem {
                 .mapToDouble(rr -> Math.pow(rr - mean, 2))
                 .average().orElse(0));
 
-        // Remove outliers (beyond 3 standard deviations)
+        // Remove outliers (beyond 3 standard deviations) changed to a stdRange of 1.5 for better accuracy
         for (Long rr : rrIntervals) {
-            if (Math.abs(rr - mean) <= 3 * std && rr >= 300 && rr <= 2000) { // 30-200 BPM range
+            if ((Math.abs(rr - mean) <= stdRange * std) || rr >= 300 && rr <= 2000) { // 30-200 BPM range
                 cleaned.add(rr);
             }
         }
@@ -290,17 +293,20 @@ public class HRVMeasurementSystem {
             double sumSquaredDiffs = 0;
             int pnn50Count = 0;
 
+            int pnn100Count = 0;
             for (int i = 1; i < rrIntervals.size(); i++) {
                 double diff = rrIntervals.get(i) - rrIntervals.get(i - 1);
-                sumSquaredDiffs += diff * diff;
-
+                //if (Math.abs(diff) < 100.0) {   //a RR interval beyond 100 is actually really unreasonable. Lets toss this in as a little sense test
+                    sumSquaredDiffs += diff * diff;
+                    pnn100Count++;
+                //}
                 // Count for pNN50
                 if (Math.abs(diff) > 50) {
                     pnn50Count++;
                 }
             }
 
-            metrics.rmssd = Math.sqrt(sumSquaredDiffs / (rrIntervals.size() - 1));
+            metrics.rmssd = Math.sqrt(sumSquaredDiffs / (pnn100Count));
             metrics.pnn50 = (double) pnn50Count / (rrIntervals.size() - 1) * 100;
         }
 

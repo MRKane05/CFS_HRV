@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SAMPLE_WIDTH = 10; // Sample width for grid
     private static final int SAMPLE_HEIGHT = 10; // Sample height for grid
 
+    private TextView progress_text;
     private PreviewView previewView;
     private Button torchButton;
     private TextView pixelDataView;
@@ -183,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        progress_text = findViewById(R.id.progress_text);
         previewView = findViewById(R.id.preview_view);
         torchButton = findViewById(R.id.torch_button);
         pixelDataView = findViewById(R.id.pixel_data_view);
@@ -348,7 +350,7 @@ public class MainActivity extends AppCompatActivity {
                     if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
                         isTorchOn = !isTorchOn;
                         camera.getCameraControl().enableTorch(isTorchOn);
-                        torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
+                        //torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
                     }
                 }
 
@@ -380,6 +382,9 @@ public class MainActivity extends AppCompatActivity {
 
     int recordingStartIndex = 0;
     boolean doingDataSample = false;
+
+
+
     private void toggleTorch() {
         /*
         if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
@@ -403,6 +408,7 @@ public class MainActivity extends AppCompatActivity {
 
             heartRateTextView.setText(results.toString());
             exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
+            camera.getCameraControl().enableTorch(false);   //Disable our torch
             //peaks
             //Finally we need to display our results
         }
@@ -819,6 +825,12 @@ public class MainActivity extends AppCompatActivity {
             newTroughPoint.timestamp = currentTime;
             if (doingDataSample) {
                 allTroughPoints.add(newTroughPoint);
+                //Use this as a measuring tool. It'll need to have time included in it, but for the moment!
+                float measureProgress = (float)allTroughPoints.size()/200f; //Attempt to get 200 heartbeats
+                int barFill = (int)(measureProgress * 100f);
+                if (barFill > 100) { barFill = 100; }
+                
+                progress_text.setText("Progress: " + barFill + "%");
             }
 
             troughsTimestamps.add(currentTime);
@@ -854,7 +866,7 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(exportDir, filename);
 
         try (FileWriter writer = new FileWriter(file)) {
-            writer.write("recorded,filtered,peak\n"); // CSV Header
+            writer.write("recorded,peak\n"); // CSV Header
             for (int i=0; i<recordedPoints.size(); i++) {
                 writer.write(String.format(Locale.US, "%f,%d\n",
                         recordedPoints.get(i),

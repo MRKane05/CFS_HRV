@@ -2,7 +2,6 @@ package com.example.cfs_hrv;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
@@ -14,6 +13,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -28,13 +29,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
+import com.example.cfs_hrv.ui.home.HomeFragment;
 import com.github.mikephil.charting.components.LimitLine;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.math.MathUtils;
+import com.google.android.material.navigation.NavigationBarView;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.ByteArrayOutputStream;
@@ -178,12 +183,44 @@ public class MainActivity extends AppCompatActivity {
 
     private float MIN_HEART_PAUSE = 500f; //Anything below this value will be thrown out (120bpm)
 
+    BottomNavigationView bottomNavigationView;
+
     Long start_Time;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        bottomNavigationView = findViewById(R.id.bottom_nav);
+        bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+            //@Override
+
+            Fragment selected_fragment = null;
+
+            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                int id = menuItem.getItemId();
+                if (id == R.id.navigation_measure) {
+                    selected_fragment = new HomeFragment();
+                } else if (id == R.id.navigation_symptoms) {
+                    selected_fragment = new SymptomsFragment();
+                } else if (id == R.id.navigation_results) {
+                    selected_fragment = new ResultsFragment();
+                }
+
+                if (selected_fragment !=null) {
+                    getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selected_fragment).commit();
+                }
+                return true;
+            }
+        });
+
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
+        }
+    }
+
+    protected void setupMeasureView() {
+        /*
         progress_text = findViewById(R.id.progress_text);
         previewView = findViewById(R.id.preview_view);
         torchButton = findViewById(R.id.torch_button);
@@ -203,11 +240,13 @@ public class MainActivity extends AppCompatActivity {
         torchButton.setOnClickListener(v -> toggleTorch());
 
         cameraExecutor = Executors.newSingleThreadExecutor();
-
+        */
+        /*
         redColorChart = findViewById(R.id.red_color_chart);
 
         heartRateTextView = findViewById(R.id.heart_rate_text);
         setupChart();
+        */
 
         start_Time = System.currentTimeMillis();
     }

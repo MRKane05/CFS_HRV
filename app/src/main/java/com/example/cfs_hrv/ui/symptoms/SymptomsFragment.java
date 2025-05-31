@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -24,6 +26,11 @@ public class SymptomsFragment extends Fragment {
 
     private FragmentDashboardBinding binding;
 
+    HRVDataManager hrvData;
+
+    EditText inputField; // = findViewById<EditText>(R.id.inputField)
+    Button sendButton;// = findViewById<Button>(R.id.sendButton)
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         SymptomsViewModel symptomsViewModel =
@@ -32,9 +39,16 @@ public class SymptomsFragment extends Fragment {
         binding = FragmentDashboardBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textDashboard;
+        final TextView textView = binding.predictionText;
         symptomsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
+        inputField = binding.inputField;
+        sendButton = binding.sendButton;
+
+        // When the button is clicked
+        sendButton.setOnClickListener (
+            v -> getInputFieldValue()
+        );
 
 
         double predictedFatigueLevel = MakePrediction();
@@ -44,9 +58,19 @@ public class SymptomsFragment extends Fragment {
         return root;
     }
 
+    void getInputFieldValue() {
+        String userInput = inputField.getText().toString();  //.text.toString(); // Get text from EditText
+        float fatigueValue = Float.parseFloat(userInput);
+        //round our float
+        int fatigueInt = Math.round(fatigueValue);
+        hrvData.setTodaysFatigueLevel(fatigueInt);
+
+        //displayText.text = userInput // Set text in TextView
+    }
+
     double MakePrediction() {
         double fatiguePrediction = -1;
-        HRVDataManager hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
+        hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
 
         List<ForestDataPoint> historicalData = new ArrayList<>();
         List<HRVData> allHRVData = hrvData.getAllData();

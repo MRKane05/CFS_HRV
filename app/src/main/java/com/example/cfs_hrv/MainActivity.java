@@ -408,6 +408,7 @@ public class MainActivity extends AppCompatActivity {
             //Finally we need to display our results
         }
     }
+
     private void toggleTorch() {
         if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
             isTorchOn = !isTorchOn;

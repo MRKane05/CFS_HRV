@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.cfs_hrv.HRVMeasurementSystem;
 import com.example.cfs_hrv.ImageProcessing;
 import com.example.cfs_hrv.R;
 import com.example.cfs_hrv.databinding.FragmentHomeBinding;
@@ -51,6 +52,8 @@ public class MeasureFragment extends Fragment {
     private FragmentHomeBinding binding;
 
     private TextView progress_text;
+
+    private TextView heartRateTextView;
     private PreviewView previewView;
     private Button measureButton;
     private TextView pixelDataView;
@@ -68,8 +71,10 @@ public class MeasureFragment extends Fragment {
     private static final int REQUEST_CODE_PERMISSIONS = 10;
 
     //Measure stuff
-    private Long start_Time;
-    private Long lastProcessedTime;
+    private Long start_Time = 0l;
+    private Long lastProcessedTime = 0l;
+
+    public List<HRVMeasurementSystem.DataPoint> dataPointList = new ArrayList<>();
 
     boolean isTorchOn = false;
 
@@ -96,7 +101,7 @@ public class MeasureFragment extends Fragment {
         mainHandler = new Handler(Looper.getMainLooper());
 
         // Set up the torch toggle button
-        //measureButton.setOnClickListener(v -> dataRecordButton());
+        measureButton.setOnClickListener(v -> dataRecordButton());
 
         cameraExecutor = Executors.newSingleThreadExecutor();
         // Request camera permissions
@@ -109,10 +114,36 @@ public class MeasureFragment extends Fragment {
 
         redColorChart = binding.redColorChart;//view.findViewById(R.id.red_color_chart);
 
-        //heartRateTextView = findViewById(R.id.heart_rate_text);
+        heartRateTextView = binding.heartRateText;
         //setupChart();
 
         return root;
+    }
+
+    boolean doingDataSample = false;
+
+    Long sample_startTime;
+    public void dataRecordButton() {
+        //Setup a user controlled sample window for ease of function
+        if (!doingDataSample) {
+            //recordingStartIndex =  dataPointCount;
+            doingDataSample = true;
+            sample_startTime = System.currentTimeMillis();
+            measureButton.setText("Doing Data Sample");
+        } else {
+            measureButton.setText("Doing Data Analysis");
+            doingDataSample = false;
+
+            //sample_stopTime = System.currentTimeMillis();
+            HRVMeasurementSystem.HRVMetrics results =
+                    HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
+
+            heartRateTextView.setText(results.toString());
+            //exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
+            camera.getCameraControl().enableTorch(false);   //Disable our torch
+            //peaks
+            //Finally we need to display our results
+        }
     }
 
     private void setupChart() {
@@ -178,6 +209,11 @@ public class MeasureFragment extends Fragment {
         mainHandler.post(() -> {
             LineDataSet dataSet;
 
+            if (doingDataSample) {
+                int completePercentage = (int) ((System.currentTimeMillis() - sample_startTime) * 100 / MEASURE_TIME_DURATION);
+                progress_text.setText(String.format("Progress: %d%%", completePercentage));
+            }
+
             if (redColorChart.getData() != null &&
                     redColorChart.getData().getDataSetCount() > 0) {
                 // Update existing dataset
@@ -201,6 +237,8 @@ public class MeasureFragment extends Fragment {
             redColorChart.invalidate();
         });
     }
+
+    protected Long MEASURE_TIME_DURATION = 120000L; //2 minutes
 
     private void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
@@ -231,7 +269,20 @@ public class MeasureFragment extends Fragment {
                             //if (start_delay > 500L) {   //Unthrottled data gathering
                             //processImage(imageProxy);
                             double imageYValue = ImageProcessing.processImageFromYPlane(imageProxy);
+
                             //Need to start passing through all the bits and pieces to do the likes of updating our graph
+                            if (doingDataSample) {
+
+                                HRVMeasurementSystem.DataPoint newDataPoint = new HRVMeasurementSystem.DataPoint(imageYValue, System.currentTimeMillis());
+                                dataPointList.add(newDataPoint);
+
+
+                                if (start_Time + MEASURE_TIME_DURATION < System.currentTimeMillis()) {
+                                    //Stop our sample
+                                    dataRecordButton(); //Stop our sample after the duration
+                                }
+                            }
+
 
                             updateRedColorChart((float)imageYValue);
                             lastProcessedTime = currentTime;
@@ -254,6 +305,7 @@ public class MeasureFragment extends Fragment {
 
                 // Update torch button state based on flashlight availability
                 measureButton.setEnabled(camera.getCameraInfo().hasFlashUnit());
+
                 if (camera.getCameraInfo().hasFlashUnit()) {
                     //toggleTorch(); //Turn the torch on to begin with
                     if (camera != null && camera.getCameraInfo().hasFlashUnit()) {

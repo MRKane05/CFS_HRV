@@ -11,10 +11,8 @@ import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -24,10 +22,8 @@ import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.Image;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -35,7 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
-import com.example.cfs_hrv.ui.home.HomeFragment;
+import com.example.cfs_hrv.ui.measure.MeasureFragment;
 import com.example.cfs_hrv.ui.results.ResultsFragment;
 import com.example.cfs_hrv.ui.symptoms.SymptomsFragment;
 import com.github.mikephil.charting.components.LimitLine;
@@ -49,11 +45,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 //Graph imports
 import com.github.mikephil.charting.charts.LineChart;
@@ -63,7 +57,6 @@ import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.formatter.ValueFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +94,7 @@ class HRVResult {
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_PERMISSIONS = 10;
-    private static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
+    public static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
     private static final String TAG = "CameraTorch";
 
     //Config for sample window
@@ -202,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 int id = menuItem.getItemId();
                 if (id == R.id.navigation_measure) {
-                    selected_fragment = new HomeFragment();
+                    selected_fragment = new MeasureFragment();
                 } else if (id == R.id.navigation_symptoms) {
                     selected_fragment = new SymptomsFragment(); //Dashboard is Symptoms
                 } else if (id == R.id.navigation_results) {
@@ -217,38 +210,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new MeasureFragment()).commit();
         }
-    }
-
-    protected void setupMeasureView() {
-        /*
-        progress_text = findViewById(R.id.progress_text);
-        previewView = findViewById(R.id.preview_view);
-        torchButton = findViewById(R.id.torch_button);
-        pixelDataView = findViewById(R.id.pixel_data_view);
-
-        mainHandler = new Handler(Looper.getMainLooper());
-
-        // Request camera permissions
-        if (allPermissionsGranted()) {
-            startCamera();
-        } else {
-            ActivityCompat.requestPermissions(
-                    this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
-        }
-
-        // Set up the torch toggle button
-        torchButton.setOnClickListener(v -> toggleTorch());
-
-        cameraExecutor = Executors.newSingleThreadExecutor();
-        */
-        /*
-        redColorChart = findViewById(R.id.red_color_chart);
-
-        heartRateTextView = findViewById(R.id.heart_rate_text);
-        setupChart();
-        */
 
         start_Time = System.currentTimeMillis();
     }
@@ -424,16 +387,7 @@ public class MainActivity extends AppCompatActivity {
     int recordingStartIndex = 0;
     boolean doingDataSample = false;
 
-
-
-    private void toggleTorch() {
-        /*
-        if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
-            isTorchOn = !isTorchOn;
-            camera.getCameraControl().enableTorch(isTorchOn);
-            torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
-        }
-        */
+    public void dataRecordButton() {
         //Setup a user controlled sample window for ease of function
         if (!doingDataSample) {
             recordingStartIndex =  dataPointCount;
@@ -452,6 +406,13 @@ public class MainActivity extends AppCompatActivity {
             camera.getCameraControl().enableTorch(false);   //Disable our torch
             //peaks
             //Finally we need to display our results
+        }
+    }
+    private void toggleTorch() {
+        if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+            isTorchOn = !isTorchOn;
+            camera.getCameraControl().enableTorch(isTorchOn);
+            torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
         }
     }
 

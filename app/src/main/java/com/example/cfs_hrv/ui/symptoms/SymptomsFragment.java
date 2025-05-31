@@ -1,4 +1,4 @@
-package com.example.cfs_hrv.ui.notifications;
+package com.example.cfs_hrv.ui.symptoms;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,22 +10,22 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.cfs_hrv.databinding.FragmentNotificationsBinding;
+import com.example.cfs_hrv.databinding.FragmentDashboardBinding;
 
-public class NotificationsFragment extends Fragment {
+public class SymptomsFragment extends Fragment {
 
-    private FragmentNotificationsBinding binding;
+    private FragmentDashboardBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        NotificationsViewModel notificationsViewModel =
-                new ViewModelProvider(this).get(NotificationsViewModel.class);
+        SymptomsViewModel symptomsViewModel =
+                new ViewModelProvider(this).get(SymptomsViewModel.class);
 
-        binding = FragmentNotificationsBinding.inflate(inflater, container, false);
+        binding = FragmentDashboardBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        final TextView textView = binding.textNotifications;
-        notificationsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        final TextView textView = binding.textDashboard;
+        symptomsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
         return root;
     }
 

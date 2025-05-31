@@ -36,6 +36,8 @@ import android.widget.Toast;
 import android.Manifest;
 
 import com.example.cfs_hrv.ui.home.HomeFragment;
+import com.example.cfs_hrv.ui.results.ResultsFragment;
+import com.example.cfs_hrv.ui.symptoms.SymptomsFragment;
 import com.github.mikephil.charting.components.LimitLine;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.math.MathUtils;
@@ -202,9 +204,9 @@ public class MainActivity extends AppCompatActivity {
                 if (id == R.id.navigation_measure) {
                     selected_fragment = new HomeFragment();
                 } else if (id == R.id.navigation_symptoms) {
-                    selected_fragment = new SymptomsFragment();
+                    selected_fragment = new SymptomsFragment(); //Dashboard is Symptoms
                 } else if (id == R.id.navigation_results) {
-                    selected_fragment = new ResultsFragment();
+                    selected_fragment = new ResultsFragment();  //Notifications are results
                 }
 
                 if (selected_fragment !=null) {

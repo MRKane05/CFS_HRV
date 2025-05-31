@@ -1,6 +1,7 @@
 package com.example.cfs_hrv.ui.measure;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.cfs_hrv.HRVDataManager;
 import com.example.cfs_hrv.HRVMeasurementSystem;
 import com.example.cfs_hrv.ImageProcessing;
 import com.example.cfs_hrv.R;
@@ -116,7 +118,7 @@ public class MeasureFragment extends Fragment {
 
         heartRateTextView = binding.heartRateText;
         //setupChart();
-
+        HRVDataManager hrvManager = new HRVDataManager(getContext());
         return root;
     }
 
@@ -138,11 +140,17 @@ public class MeasureFragment extends Fragment {
             HRVMeasurementSystem.HRVMetrics results =
                     HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
 
+            //Do our data stuff
+            HRVDataManager hrvManager = new HRVDataManager(getContext());
+            //    public HRVData(double meanRR, double sdnn, double rmssd, double pnn50,
+            //                   double heartRate, int validBeats, int fatigueLevel) {
+            hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
+                    results.heartRate, results.validBeats);
+
+
             heartRateTextView.setText(results.toString());
             //exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
             camera.getCameraControl().enableTorch(false);   //Disable our torch
-            //peaks
-            //Finally we need to display our results
         }
     }
 
@@ -276,7 +284,7 @@ public class MeasureFragment extends Fragment {
                                 HRVMeasurementSystem.DataPoint newDataPoint = new HRVMeasurementSystem.DataPoint(imageYValue, System.currentTimeMillis());
                                 dataPointList.add(newDataPoint);
 
-
+                                //Typically this seems to do a crash :/
                                 if (start_Time + MEASURE_TIME_DURATION < System.currentTimeMillis()) {
                                     //Stop our sample
                                     dataRecordButton(); //Stop our sample after the duration

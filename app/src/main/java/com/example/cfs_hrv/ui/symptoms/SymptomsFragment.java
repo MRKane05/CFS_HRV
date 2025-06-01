@@ -13,9 +13,11 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.cfs_hrv.ForestDataPoint;
+import com.example.cfs_hrv.HRVBaselineAnalyzer;
 import com.example.cfs_hrv.HRVData;
 import com.example.cfs_hrv.HRVDataManager;
 import com.example.cfs_hrv.HRVMeasurementSystem;
+import com.example.cfs_hrv.HRVTrackingActivity;
 import com.example.cfs_hrv.RandomForest;
 import com.example.cfs_hrv.databinding.FragmentDashboardBinding;
 
@@ -40,7 +42,7 @@ public class SymptomsFragment extends Fragment {
         View root = binding.getRoot();
 
         final TextView textView = binding.predictionText;
-        symptomsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        //symptomsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
         inputField = binding.inputField;
         sendButton = binding.sendButton;
@@ -51,8 +53,8 @@ public class SymptomsFragment extends Fragment {
         );
 
 
-        double predictedFatigueLevel = MakePrediction();
-
+        String predictedFatigueLevel = MakePrediction();
+        textView.setText(predictedFatigueLevel);
 
 
         return root;
@@ -68,7 +70,7 @@ public class SymptomsFragment extends Fragment {
         //displayText.text = userInput // Set text in TextView
     }
 
-    double MakePrediction() {
+    String MakePrediction() {
         double fatiguePrediction = -1;
         hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
 
@@ -86,10 +88,41 @@ public class SymptomsFragment extends Fragment {
         RandomForest  fatigueModel = new RandomForest(30, 8, 3);
         fatigueModel.train(historicalData);
 
-        HRVData dataEntry = allHRVData.get(allHRVData.size()-1);
+        HRVBaselineAnalyzer baselineAnalyzer = new HRVBaselineAnalyzer(historicalData.size());
+        baselineAnalyzer.updateBaseline(historicalData);
+
+        HRVData dataEntry = allHRVData.get(allHRVData.size()-1);    //Todays entry
         //(double sdnn, double rmssd, double pnn50) {
         fatiguePrediction = fatigueModel.predict(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
-        return fatiguePrediction;
+
+        // 3. Percentile ranking
+        double percentileRank = baselineAnalyzer.getPercentileRank(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+
+        // 4. Risk assessment
+        boolean highFatigueRisk = baselineAnalyzer.isHighFatigueRisk(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+
+        HRVBaselineAnalyzer.DeviationResult riskLevel = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+
+        String reccomendation = getRecommendation(highFatigueRisk, percentileRank, riskLevel.riskLevel);
+
+        //textView.setText("Predicted Level: " + (float)predictedFatigueLevel);
+        String predictionString = "Predicted Level: " + (float)fatiguePrediction;
+        predictionString += "\n";
+        predictionString += reccomendation;
+        return predictionString;
+        //return fatiguePrediction;
+    }
+
+    public String getRecommendation(boolean highFatigueRisk, double percentileRank, String riskLevel) {
+        if (highFatigueRisk || riskLevel.equals("HIGH_DEVIATION")) {
+            return "High risk measure. Pay close attention to difficulties today.";
+        } else if (riskLevel.equals("MODERATE_DEVIATION")) {
+            return "Moderate risk measure. Take it easy on yourself.";
+        } else if (percentileRank > 75) {
+            return "Slightly raised risk measure. Proceed carefully.";
+        } else {
+            return "Your risk measure is within normal ranges.";
+        }
     }
 
     @Override

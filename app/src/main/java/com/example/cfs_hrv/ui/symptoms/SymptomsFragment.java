@@ -30,6 +30,7 @@ public class SymptomsFragment extends Fragment {
 
     HRVDataManager hrvData;
 
+
     EditText inputField; // = findViewById<EditText>(R.id.inputField)
     Button sendButton;// = findViewById<Button>(R.id.sendButton)
 
@@ -101,6 +102,8 @@ public class SymptomsFragment extends Fragment {
         // 4. Risk assessment
         boolean highFatigueRisk = baselineAnalyzer.isHighFatigueRisk(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
+        HRVBaselineAnalyzer.DeviationResult deviation = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+
         HRVBaselineAnalyzer.DeviationResult riskLevel = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
         String reccomendation = getRecommendation(highFatigueRisk, percentileRank, riskLevel.riskLevel);
@@ -109,6 +112,13 @@ public class SymptomsFragment extends Fragment {
         String predictionString = "Predicted Level: " + (float)fatiguePrediction;
         predictionString += "\n";
         predictionString += reccomendation;
+
+        predictionString += "\n\n";
+        predictionString += "SDNN Dev: " + deviation.sdnnDeviation + "\n";
+        predictionString += "RMSS Dev: " + deviation.rmssdDeviation + "\n";
+        predictionString += "PNN50 Dev: " + deviation.pnn50Deviation + "\n";
+        predictionString += "Composite Dev: " + deviation.compositeDeviation + "\n";
+
         return predictionString;
         //return fatiguePrediction;
     }

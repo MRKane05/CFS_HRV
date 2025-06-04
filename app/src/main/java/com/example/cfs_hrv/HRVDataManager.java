@@ -66,7 +66,7 @@ public class HRVDataManager {
             existingData.setTimestamp(System.currentTimeMillis());
         } else {
             // Create new entry with default fatigue level of 0
-            HRVData newData = new HRVData(meanRR, sdnn, rmssd, pnn50, heartRate, validBeats, 0);
+            HRVData newData = new HRVData(meanRR, sdnn, rmssd, pnn50, heartRate, validBeats, 0, 0);
             allData.add(newData);
         }
 
@@ -81,13 +81,32 @@ public class HRVDataManager {
 
         if (todaysData == null) {
             // Create a new entry with default values and the specified fatigue level
-            HRVData newData = new HRVData(0, 0, 0, 0, 0, 0, fatigueLevel);
+            HRVData newData = new HRVData(0, 0, 0, 0, 0, 0, fatigueLevel, 0);
             allData.add(newData);
             saveAllData();
             return true;
         }
 
         todaysData.setFatigueLevel(fatigueLevel);
+        saveAllData();
+        return true;
+    }
+
+    /**
+     * Set headache level for today's entry
+     */
+    public boolean setTodaysHeadacheLevel(int headacheLevel) {
+        HRVData todaysData = getTodaysData();
+
+        if (todaysData == null) {
+            // Create a new entry with default values and the specified headache level
+            HRVData newData = new HRVData(0, 0, 0, 0, 0, 0, 0, headacheLevel);
+            allData.add(newData);
+            saveAllData();
+            return true;
+        }
+
+        todaysData.setHeadacheLevel(headacheLevel);
         saveAllData();
         return true;
     }

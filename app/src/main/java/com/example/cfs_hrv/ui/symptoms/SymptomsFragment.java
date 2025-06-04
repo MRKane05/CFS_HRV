@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -24,6 +25,7 @@ import com.example.cfs_hrv.databinding.FragmentDashboardBinding;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class SymptomsFragment extends Fragment {
 
@@ -34,7 +36,13 @@ public class SymptomsFragment extends Fragment {
 
     EditText inputField; // = findViewById<EditText>(R.id.inputField)
     Button sendButton;// = findViewById<Button>(R.id.sendButton)
+    int currentFatigueLevel = 0;
+    int currentHeadacheLevel = 0;
 
+    //Fatigue selection buttons
+    // Radio button references
+    private RadioButton rbtn_fatigueLevel0, rbtn_fatigueLevel1, rbtn_fatigueLevel2, rbtn_fatigueLevel3, rbtn_fatigueLevel4, rbtn_fatigueLevel5;
+    private RadioButton rbtn_HeadacheLevel0, rbtn_HeadacheLevel1, rbtn_HeadacheLevel2, rbtn_HeadacheLevel3, rbtn_HeadacheLevel4, rbtn_HeadacheLevel5;
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         SymptomsViewModel symptomsViewModel =
@@ -43,17 +51,24 @@ public class SymptomsFragment extends Fragment {
         binding = FragmentDashboardBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
+        hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
+
         final TextView textView = binding.predictionText;
         //symptomsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
-        inputField = binding.inputField;
-        sendButton = binding.sendButton;
+        //inputField = binding.inputField;
+        //sendButton = binding.sendButton;
 
-        // When the button is clicked
-        sendButton.setOnClickListener (
-            v -> getInputFieldValue()
-        );
+        // Initialize radio buttons
+        initializeRadioButtons(root);
 
+        // Set up click listeners
+        setupRadioButtonListeners();
+
+        // Load and display current fatigue level from dataset
+        loadCurrentFatigueLevel();
+
+        loadCurrentHeadacheLevel();
 
         String predictedFatigueLevel = MakePrediction();
         textView.setText(predictedFatigueLevel);
@@ -73,8 +88,10 @@ public class SymptomsFragment extends Fragment {
     }
 
     String MakePrediction() {
-        double fatiguePrediction = -1;
-        hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
+        //double fatiguePrediction = -1;
+        if (hrvData ==null) {
+            hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
+        }
 
         List<ForestDataPoint> historicalData = new ArrayList<>();
         List<HRVData> allHRVData = hrvData.getAllData();
@@ -89,54 +106,52 @@ public class SymptomsFragment extends Fragment {
             historicHRV.add(dataEntry);
         }
 
-        RandomForest  fatigueModel = new RandomForest(30, 8, 3);
-        fatigueModel.train(historicalData);
+        //RandomForest  fatigueModel = new RandomForest(30, 8, 3);
+        //fatigueModel.train(historicalData);
 
         HRVBaselineAnalyzer baselineAnalyzer = new HRVBaselineAnalyzer(historicalData.size());
         baselineAnalyzer.updateBaseline(historicalData);
 
-        HRVData dataEntry = allHRVData.get(allHRVData.size()-1);    //Todays entry
+        HRVData dataEntry = hrvData.getTodaysData();// allHRVData.get(allHRVData.size()-1);    //Todays entry
         //(double sdnn, double rmssd, double pnn50) {
-        fatiguePrediction = fatigueModel.predict(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+        //fatiguePrediction = fatigueModel.predict(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
         // 3. Percentile ranking
-        double percentileRank = baselineAnalyzer.getPercentileRank(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+        //double percentileRank = baselineAnalyzer.getPercentileRank(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
         // 4. Risk assessment
-        boolean highFatigueRisk = baselineAnalyzer.isHighFatigueRisk(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+        //boolean highFatigueRisk = baselineAnalyzer.isHighFatigueRisk(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
-        HRVBaselineAnalyzer.DeviationResult deviation = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+        //HRVBaselineAnalyzer.DeviationResult deviation = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
-        HRVBaselineAnalyzer.DeviationResult riskLevel = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
+        //HRVBaselineAnalyzer.DeviationResult riskLevel = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
-        String reccomendation = getRecommendation(highFatigueRisk, percentileRank, riskLevel.riskLevel);
-
-
+        //String reccomendation = getRecommendation(highFatigueRisk, percentileRank, riskLevel.riskLevel);
 
         //textView.setText("Predicted Level: " + (float)predictedFatigueLevel);
+        /*
         String predictionString = "Predicted Level: " + (float)fatiguePrediction;
         predictionString += "\n";
         predictionString += reccomendation;
-        predictionString += "\n\n";
+        predictionString += "\n\n";*/
 
-        // Basic prediction
-        int predictedFatigue = FatigueLevelPredictor.predictFatigueLevel(historicHRV, dataEntry);
-        predictionString += "Historic Prediction: " + predictedFatigue + "\n";
-// With recent trend consideration (last 3 days)
-        int trendPrediction = FatigueLevelPredictor.predictFatigueLevelWithTrend(historicHRV, dataEntry, 3);
-        predictionString += "Trend Prediction: " + trendPrediction + "\n";
+        String predictionString = "Todays Fatigue Level: " + dataEntry.getFatigueLevel() + "\n";
+        predictionString += "Todays Headache Level: " + dataEntry.getHeadacheLevel() + "\n";
+
+        predictionString  += "Predicted Level: " + FatigueLevelPredictor.predictFatigueLevelRange(historicHRV, dataEntry) + "\n";
+
+        predictionString += "Trend Prediction: " + FatigueLevelPredictor.predictFatigueLevelRangeWithTrend(historicHRV, dataEntry, 7) + "\n";
 // Get confidence level
-        double confidence = FatigueLevelPredictor.getPredictionConfidence(historicHRV, predictedFatigue);
-        predictionString += "Confidence: " + confidence + "\n";
-
+        double confidence = FatigueLevelPredictor.getPredictionConfidence(historicHRV, FatigueLevelPredictor.predictFatigueLevel(historicHRV, dataEntry));
+        predictionString += "Confidence: " + confidence + "%\n";
+/*
         predictionString += "\n\n";
         predictionString += "SDNN Dev: " + deviation.sdnnDeviation + "\n";
         predictionString += "RMSS Dev: " + deviation.rmssdDeviation + "\n";
         predictionString += "PNN50 Dev: " + deviation.pnn50Deviation + "\n";
         predictionString += "Composite Dev: " + deviation.compositeDeviation + "\n";
-
+*/
         return predictionString;
-        //return fatiguePrediction;
     }
 
     public String getRecommendation(boolean highFatigueRisk, double percentileRank, String riskLevel) {
@@ -155,5 +170,174 @@ public class SymptomsFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         binding = null;
+    }
+
+    private void initializeRadioButtons(View view) {
+        rbtn_fatigueLevel0 = binding.rbtnFatigueLevel0;
+        rbtn_fatigueLevel1 = binding.rbtnFatigueLevel1;
+        rbtn_fatigueLevel2 = binding.rbtnFatigueLevel2;
+        rbtn_fatigueLevel3 = binding.rbtnFatigueLevel3;
+        rbtn_fatigueLevel4 = binding.rbtnFatigueLevel4;
+        rbtn_fatigueLevel5 = binding.rbtnFatigueLevel5;
+
+        rbtn_HeadacheLevel0 = binding.rbtnHeadacheLevel0;
+        rbtn_HeadacheLevel1 = binding.rbtnHeadacheLevel1;
+        rbtn_HeadacheLevel2 = binding.rbtnHeadacheLevel2;
+        rbtn_HeadacheLevel3 = binding.rbtnHeadacheLevel3;
+        rbtn_HeadacheLevel4 = binding.rbtnHeadacheLevel4;
+        rbtn_HeadacheLevel5 = binding.rbtnHeadacheLevel5;
+    }
+
+    private void setupRadioButtonListeners() {
+        rbtn_fatigueLevel0.setOnClickListener(v -> onFatigueLevelSelected(0));
+        rbtn_fatigueLevel1.setOnClickListener(v -> onFatigueLevelSelected(1));
+        rbtn_fatigueLevel2.setOnClickListener(v -> onFatigueLevelSelected(2));
+        rbtn_fatigueLevel3.setOnClickListener(v -> onFatigueLevelSelected(3));
+        rbtn_fatigueLevel4.setOnClickListener(v -> onFatigueLevelSelected(4));
+        rbtn_fatigueLevel5.setOnClickListener(v -> onFatigueLevelSelected(5));
+
+        rbtn_HeadacheLevel0.setOnClickListener(v -> onHeadacheLevelSelected(0));
+        rbtn_HeadacheLevel1.setOnClickListener(v -> onHeadacheLevelSelected(1));
+        rbtn_HeadacheLevel2.setOnClickListener(v -> onHeadacheLevelSelected(2));
+        rbtn_HeadacheLevel3.setOnClickListener(v -> onHeadacheLevelSelected(3));
+        rbtn_HeadacheLevel4.setOnClickListener(v -> onHeadacheLevelSelected(4));
+        rbtn_HeadacheLevel5.setOnClickListener(v -> onHeadacheLevelSelected(5));
+    }
+
+    /**
+     * Called when a radio button is selected
+     * @param fatigueLevel The selected fatigue level (0-5)
+     */
+    private void onFatigueLevelSelected(int fatigueLevel) {
+        // Clear all radio buttons first
+        //clearAllRadioButtons();
+
+        // Set the selected radio button
+        //setRadioButtonChecked(fatigueLevel, true);
+
+        // Store the current selection
+        currentFatigueLevel = fatigueLevel;
+
+        // Save to your dataset here
+        hrvData.setTodaysFatigueLevel(fatigueLevel);
+    }
+
+    private void onHeadacheLevelSelected(int headacheLevel) {
+        // Clear all radio buttons first
+        //clearAllHeadacheRadioButtons();
+
+        // Set the selected radio button
+        //setRadioHeadacheButtonChecked(headacheLevel, true);
+
+        // Store the current selection
+        currentHeadacheLevel = headacheLevel;
+
+        // Save to your dataset here
+        hrvData.setTodaysHeadacheLevel(headacheLevel);
+    }
+
+    /**
+     * Load the current fatigue level from your dataset and update UI
+     */
+    private void loadCurrentFatigueLevel() {
+        // Replace this with your actual dataset retrieval method
+        int savedFatigueLevel = hrvData.getTodaysData().getFatigueLevel();
+
+        if (savedFatigueLevel >= 0 && savedFatigueLevel <= 5) {
+            currentFatigueLevel = savedFatigueLevel;
+            clearAllRadioButtons();
+            setRadioButtonChecked(savedFatigueLevel, true);
+        }
+    }
+
+
+    private void loadCurrentHeadacheLevel() {
+        // Replace this with your actual dataset retrieval method
+        int savedHeadacheLevel = hrvData.getTodaysData().getHeadacheLevel();
+
+        if (savedHeadacheLevel >= 0 && savedHeadacheLevel <= 5) {
+            currentHeadacheLevel = savedHeadacheLevel;
+            clearAllHeadacheRadioButtons();
+            setRadioHeadacheButtonChecked(savedHeadacheLevel, true);
+        }
+    }
+    /**
+     * Clear all radio button selections
+     */
+    private void clearAllRadioButtons() {
+        rbtn_fatigueLevel0.setChecked(false);
+        rbtn_fatigueLevel1.setChecked(false);
+        rbtn_fatigueLevel2.setChecked(false);
+        rbtn_fatigueLevel3.setChecked(false);
+        rbtn_fatigueLevel4.setChecked(false);
+        rbtn_fatigueLevel5.setChecked(false);
+    }
+
+    private void clearAllHeadacheRadioButtons() {
+        rbtn_HeadacheLevel0.setChecked(false);
+        rbtn_HeadacheLevel1.setChecked(false);
+        rbtn_HeadacheLevel2.setChecked(false);
+        rbtn_HeadacheLevel3.setChecked(false);
+        rbtn_HeadacheLevel4.setChecked(false);
+        rbtn_HeadacheLevel5.setChecked(false);
+    }
+
+    /**
+     * Set a specific radio button's checked state
+     * @param level The fatigue level (0-5)
+     * @param checked Whether to check or uncheck
+     */
+    private void setRadioButtonChecked(int level, boolean checked) {
+        switch (level) {
+            case 0:
+                rbtn_fatigueLevel0.setChecked(checked);
+                break;
+            case 1:
+                rbtn_fatigueLevel1.setChecked(checked);
+                break;
+            case 2:
+                rbtn_fatigueLevel2.setChecked(checked);
+                break;
+            case 3:
+                rbtn_fatigueLevel3.setChecked(checked);
+                break;
+            case 4:
+                rbtn_fatigueLevel4.setChecked(checked);
+                break;
+            case 5:
+                rbtn_fatigueLevel5.setChecked(checked);
+                break;
+        }
+    }
+
+    private void setRadioHeadacheButtonChecked(int level, boolean checked) {
+        rbtn_HeadacheLevel0.setChecked(level == 0);
+        rbtn_HeadacheLevel1.setChecked(level == 1);
+        rbtn_HeadacheLevel2.setChecked(level == 2);
+        rbtn_HeadacheLevel3.setChecked(level == 3);
+        rbtn_HeadacheLevel4.setChecked(level == 4);
+        rbtn_HeadacheLevel5.setChecked(level == 5);
+        /*
+        switch (level) {
+            case 0:
+                rbtn_HeadacheLevel0.setChecked(checked);
+                break;
+            case 1:
+                rbtn_HeadacheLevel1.setChecked(checked);
+                break;
+            case 2:
+                rbtn_HeadacheLevel2.setChecked(checked);
+                break;
+            case 3:
+                rbtn_HeadacheLevel3.setChecked(checked);
+                break;
+            case 4:
+                rbtn_HeadacheLevel4.setChecked(checked);
+                break;
+            case 5:
+                rbtn_HeadacheLevel5.setChecked(checked);
+                break;
+        }
+         */
     }
 }

@@ -15,6 +15,8 @@ public class HRVData {
     private double heartRate;
     private int validBeats;
     private int fatigueLevel;
+
+    private int headacheLevel;
     private long timestamp;
     private String date;
     private String time;
@@ -25,7 +27,7 @@ public class HRVData {
     }
 
     public HRVData(double meanRR, double sdnn, double rmssd, double pnn50,
-                   double heartRate, int validBeats, int fatigueLevel) {
+                   double heartRate, int validBeats, int fatigueLevel, int headacheLevel) {
         this.meanRR = meanRR;
         this.sdnn = sdnn;
         this.rmssd = rmssd;
@@ -33,6 +35,7 @@ public class HRVData {
         this.heartRate = heartRate;
         this.validBeats = validBeats;
         this.fatigueLevel = fatigueLevel;
+        this.headacheLevel = headacheLevel;
         this.timestamp = System.currentTimeMillis();
         updateDateTimeStrings();
     }
@@ -53,6 +56,8 @@ public class HRVData {
     public double getHeartRate() { return heartRate; }
     public int getValidBeats() { return validBeats; }
     public int getFatigueLevel() { return fatigueLevel; }
+
+    public int getHeadacheLevel() { return headacheLevel; }
     public long getTimestamp() { return timestamp; }
     public String getDate() { return date; }
     public String getTime() { return time; }
@@ -65,6 +70,8 @@ public class HRVData {
     public void setHeartRate(double heartRate) { this.heartRate = heartRate; }
     public void setValidBeats(int validBeats) { this.validBeats = validBeats; }
     public void setFatigueLevel(int fatigueLevel) { this.fatigueLevel = fatigueLevel; }
+
+    public void setHeadacheLevel(int headacheLevel) { this.headacheLevel= headacheLevel; }
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
         updateDateTimeStrings();

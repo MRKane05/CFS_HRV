@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.cfs_hrv.FatigueLevelPredictor;
 import com.example.cfs_hrv.ForestDataPoint;
 import com.example.cfs_hrv.HRVBaselineAnalyzer;
 import com.example.cfs_hrv.HRVData;
@@ -78,12 +79,14 @@ public class SymptomsFragment extends Fragment {
         List<ForestDataPoint> historicalData = new ArrayList<>();
         List<HRVData> allHRVData = hrvData.getAllData();
 
+        List<HRVData> historicHRV = new ArrayList<>();
         for (int i=0; i< allHRVData.size()-1; i++) {    //Grab all our data apart from todays entry for a test
             //double sdnn, double rmssd, double pnn50, double fatigueLevel
             HRVData dataEntry = allHRVData.get(i);
             ForestDataPoint newForestPoint = new ForestDataPoint(dataEntry.getSdnn(), dataEntry.getRmssd(),
                     dataEntry.getPnn50(), dataEntry.getFatigueLevel());
             historicalData.add(newForestPoint);
+            historicHRV.add(dataEntry);
         }
 
         RandomForest  fatigueModel = new RandomForest(30, 8, 3);
@@ -108,10 +111,23 @@ public class SymptomsFragment extends Fragment {
 
         String reccomendation = getRecommendation(highFatigueRisk, percentileRank, riskLevel.riskLevel);
 
+
+
         //textView.setText("Predicted Level: " + (float)predictedFatigueLevel);
         String predictionString = "Predicted Level: " + (float)fatiguePrediction;
         predictionString += "\n";
         predictionString += reccomendation;
+        predictionString += "\n\n";
+
+        // Basic prediction
+        int predictedFatigue = FatigueLevelPredictor.predictFatigueLevel(historicHRV, dataEntry);
+        predictionString += "Historic Prediction: " + predictedFatigue + "\n";
+// With recent trend consideration (last 3 days)
+        int trendPrediction = FatigueLevelPredictor.predictFatigueLevelWithTrend(historicHRV, dataEntry, 3);
+        predictionString += "Trend Prediction: " + trendPrediction + "\n";
+// Get confidence level
+        double confidence = FatigueLevelPredictor.getPredictionConfidence(historicHRV, predictedFatigue);
+        predictionString += "Confidence: " + confidence + "\n";
 
         predictionString += "\n\n";
         predictionString += "SDNN Dev: " + deviation.sdnnDeviation + "\n";

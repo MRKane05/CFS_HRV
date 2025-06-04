@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,7 +54,8 @@ public class MeasureFragment extends Fragment {
 
     private FragmentHomeBinding binding;
 
-    private TextView progress_text;
+    //private TextView progress_text;
+    private ProgressBar progressBar;
 
     private TextView heartRateTextView;
     private PreviewView previewView;
@@ -95,7 +97,8 @@ public class MeasureFragment extends Fragment {
         measureViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
          */
         //All of our setup stuff for the measure view
-        progress_text = binding.progressText;// .findViewById(R.id.progress_text);
+        //progress_text = binding.progressText;// .findViewById(R.id.progress_text);
+        progressBar = binding.progressBar;
         previewView = binding.previewView; //.findViewById(R.id.preview_view);
         measureButton = binding.measureButton; //.findViewById(R.id.torch_button);
         //pixelDataView = binding.findViewById(R.id.pixel_data_view);
@@ -131,9 +134,18 @@ public class MeasureFragment extends Fragment {
             //recordingStartIndex =  dataPointCount;
             doingDataSample = true;
             sample_startTime = System.currentTimeMillis();
-            measureButton.setText("Doing Data Sample");
+            getActivity().runOnUiThread(new Runnable() {
+                public void run(){
+                    measureButton.setText("Doing Data Sample");
+                }
+            });
+
         } else {
-            measureButton.setText("Doing Data Analysis");
+            getActivity().runOnUiThread(new Runnable() {
+                                            public void run() {
+                                                measureButton.setText("Doing Data Analysis");
+                                            }
+                                        });
             doingDataSample = false;
 
             //sample_stopTime = System.currentTimeMillis();
@@ -147,8 +159,11 @@ public class MeasureFragment extends Fragment {
             hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
                     results.heartRate, results.validBeats);
 
-
-            heartRateTextView.setText(results.toString());
+            getActivity().runOnUiThread(new Runnable() {
+                                            public void run() {
+                                                heartRateTextView.setText(results.toString());
+                                            }
+                                        });
             //exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
             camera.getCameraControl().enableTorch(false);   //Disable our torch
         }
@@ -219,7 +234,12 @@ public class MeasureFragment extends Fragment {
 
             if (doingDataSample) {
                 int completePercentage = (int) ((System.currentTimeMillis() - sample_startTime) * 100 / MEASURE_TIME_DURATION);
-                progress_text.setText(String.format("Progress: %d%%", completePercentage));
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        //progress_text.setText(String.format("Progress: %d%%", completePercentage));
+                        progressBar.setProgress(completePercentage);
+                    }
+                });
             }
 
             if (redColorChart.getData() != null &&
@@ -285,7 +305,7 @@ public class MeasureFragment extends Fragment {
                                 dataPointList.add(newDataPoint);
 
                                 //Typically this seems to do a crash :/
-                                if (start_Time + MEASURE_TIME_DURATION < System.currentTimeMillis()) {
+                                if (sample_startTime + MEASURE_TIME_DURATION < System.currentTimeMillis()) {
                                     //Stop our sample
                                     dataRecordButton(); //Stop our sample after the duration
                                 }

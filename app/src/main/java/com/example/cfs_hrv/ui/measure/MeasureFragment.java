@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.cfs_hrv.FatigueLevelPredictor;
 import com.example.cfs_hrv.HRVDataManager;
 import com.example.cfs_hrv.HRVMeasurementSystem;
 import com.example.cfs_hrv.ImageProcessing;
@@ -125,48 +126,64 @@ public class MeasureFragment extends Fragment {
         return root;
     }
 
+    int sampleButtonState = 0;  //This will change dependin gon what we're doing
     boolean doingDataSample = false;
 
     Long sample_startTime;
     public void dataRecordButton() {
-        //Setup a user controlled sample window for ease of function
-        if (!doingDataSample) {
-            //recordingStartIndex =  dataPointCount;
-            doingDataSample = true;
-            sample_startTime = System.currentTimeMillis();
-            getActivity().runOnUiThread(new Runnable() {
-                public void run(){
-                    measureButton.setText("Doing Data Sample");
-                }
-            });
+        switch (sampleButtonState) {
+            case 0:
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run(){
+                        measureButton.setText("Get a Good Signal\nTap to Record");
+                    }
+                });
+                //startCamera();
+                sampleButtonState = 1;
+                setTorch(true);   //Enable our torch
+                break;
+            case 1:
+                doingDataSample = true;
+                sample_startTime = System.currentTimeMillis();
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run(){
+                        measureButton.setText("Doing Data Sample\nTap to Finish");
+                    }
+                });
+                sampleButtonState = 2;
+                break;
+            case 2:
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        measureButton.setText("Doing Data Analysis\nTap to Repeat");
+                    }
+                });
+                doingDataSample = false;
 
-        } else {
-            getActivity().runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                measureButton.setText("Doing Data Analysis");
-                                            }
-                                        });
-            doingDataSample = false;
+                //sample_stopTime = System.currentTimeMillis();
+                HRVMeasurementSystem.HRVMetrics results =
+                        HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
 
-            //sample_stopTime = System.currentTimeMillis();
-            HRVMeasurementSystem.HRVMetrics results =
-                    HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
+                //Do our data stuff
+                HRVDataManager hrvManager = new HRVDataManager(getContext());
+                //    public HRVData(double meanRR, double sdnn, double rmssd, double pnn50,
+                //                   double heartRate, int validBeats, int fatigueLevel) {
 
-            //Do our data stuff
-            HRVDataManager hrvManager = new HRVDataManager(getContext());
-            //    public HRVData(double meanRR, double sdnn, double rmssd, double pnn50,
-            //                   double heartRate, int validBeats, int fatigueLevel) {
-            hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
-                    results.heartRate, results.validBeats);
+                hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
+                        results.heartRate, results.validBeats);
 
-            getActivity().runOnUiThread(new Runnable() {
-                                            public void run() {
-                                                heartRateTextView.setText(results.toString());
-                                            }
-                                        });
-            //exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
-            camera.getCameraControl().enableTorch(false);   //Disable our torch
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        heartRateTextView.setText(results.toString());
+                    }
+                });
+                //exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
+                setTorch(false);   //Disable our torch
+
+                sampleButtonState = 0;  //Reset back to start
+                break;
         }
+
     }
 
     private void setupChart() {
@@ -337,8 +354,8 @@ public class MeasureFragment extends Fragment {
                 if (camera.getCameraInfo().hasFlashUnit()) {
                     //toggleTorch(); //Turn the torch on to begin with
                     if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
-                        isTorchOn = !isTorchOn;
-                        camera.getCameraControl().enableTorch(isTorchOn);
+                        //isTorchOn = !isTorchOn;
+                        //camera.getCameraControl().enableTorch(isTorchOn);
                     }
                 }
             } catch (ExecutionException | InterruptedException e) {
@@ -400,7 +417,14 @@ public class MeasureFragment extends Fragment {
         if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
             isTorchOn = !isTorchOn;
             camera.getCameraControl().enableTorch(isTorchOn);
-            measureButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
+            //measureButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
+        }
+    }
+
+    private void setTorch(boolean isOn) {
+        if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+            isTorchOn = isOn;
+            camera.getCameraControl().enableTorch(isTorchOn);
         }
     }
 

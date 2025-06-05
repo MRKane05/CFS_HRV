@@ -67,6 +67,11 @@ public class HRVDataManager {
         } else {
             // Create new entry with default fatigue level of 0
             HRVData newData = new HRVData(meanRR, sdnn, rmssd, pnn50, heartRate, validBeats, 0, 0);
+
+            //Grab an estimate of fatigue to kick off with seeing as we're adding a new entry
+            int fatigueEstimate = FatigueLevelPredictor.predictFatigueLevel(getAllData(), newData);
+            newData.setFatigueLevel(fatigueEstimate);
+
             allData.add(newData);
         }
 

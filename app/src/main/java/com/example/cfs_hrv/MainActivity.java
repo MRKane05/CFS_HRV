@@ -312,7 +312,9 @@ public class MainActivity extends AppCompatActivity {
 
                 // Preview
                 Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                if (previewView != null) {
+                    preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                }
 
                 // Image analysis use case
                 ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()

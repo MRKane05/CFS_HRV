@@ -18,14 +18,11 @@ import com.example.cfs_hrv.ForestDataPoint;
 import com.example.cfs_hrv.HRVBaselineAnalyzer;
 import com.example.cfs_hrv.HRVData;
 import com.example.cfs_hrv.HRVDataManager;
-import com.example.cfs_hrv.HRVMeasurementSystem;
-import com.example.cfs_hrv.HRVTrackingActivity;
-import com.example.cfs_hrv.RandomForest;
 import com.example.cfs_hrv.databinding.FragmentDashboardBinding;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+
 
 public class SymptomsFragment extends Fragment {
 
@@ -59,19 +56,27 @@ public class SymptomsFragment extends Fragment {
         //inputField = binding.inputField;
         //sendButton = binding.sendButton;
 
-        // Initialize radio buttons
+
+            // Initialize radio buttons
         initializeRadioButtons(root);
 
         // Set up click listeners
         setupRadioButtonListeners();
 
         // Load and display current fatigue level from dataset
-        loadCurrentFatigueLevel();
+        //Need to check if we've got data for today
+        boolean hasDataForToday=hrvData.getTodaysData() != null;
 
-        loadCurrentHeadacheLevel();
+        if (hasDataForToday) {
+            loadCurrentFatigueLevel();
 
-        String predictedFatigueLevel = MakePrediction();
-        textView.setText(predictedFatigueLevel);
+            loadCurrentHeadacheLevel();
+
+            String predictedFatigueLevel = MakePrediction();
+            textView.setText(predictedFatigueLevel);
+        } else {
+            textView.setText("No data recorded for today");
+        }
 
 
         return root;
@@ -93,8 +98,13 @@ public class SymptomsFragment extends Fragment {
             hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
         }
 
+
         List<ForestDataPoint> historicalData = new ArrayList<>();
         List<HRVData> allHRVData = hrvData.getAllData();
+
+        if (allHRVData.size() < 3) {
+            return "Need to gather " + (3 - allHRVData.size()) + " more days worth of data\nto make a predication";
+        }
 
         List<HRVData> historicHRV = new ArrayList<>();
         for (int i=0; i< allHRVData.size()-1; i++) {    //Grab all our data apart from todays entry for a test
@@ -135,10 +145,10 @@ public class SymptomsFragment extends Fragment {
         predictionString += reccomendation;
         predictionString += "\n\n";*/
 
-        String predictionString = "Todays Fatigue Level: " + dataEntry.getFatigueLevel() + "\n";
-        predictionString += "Todays Headache Level: " + dataEntry.getHeadacheLevel() + "\n";
+        //String predictionString = "Todays Fatigue Level: " + dataEntry.getFatigueLevel() + "\n";
+        //predictionString += "Todays Headache Level: " + dataEntry.getHeadacheLevel() + "\n";
 
-        predictionString  += "Predicted Level: " + FatigueLevelPredictor.predictFatigueLevelRange(historicHRV, dataEntry) + "\n";
+        String predictionString  = "Predicted Level: " + FatigueLevelPredictor.predictFatigueLevelRange(historicHRV, dataEntry) + "\n";
 
         predictionString += "Trend Prediction: " + FatigueLevelPredictor.predictFatigueLevelRangeWithTrend(historicHRV, dataEntry, 7) + "\n";
 // Get confidence level

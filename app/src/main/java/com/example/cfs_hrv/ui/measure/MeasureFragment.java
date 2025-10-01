@@ -109,6 +109,12 @@ public class MeasureFragment extends Fragment {
         // Set up the torch toggle button
         measureButton.setOnClickListener(v -> dataRecordButton());
 
+        redColorChart = binding.redColorChart;//view.findViewById(R.id.red_color_chart);
+
+        heartRateTextView = binding.heartRateText;
+        //setupChart();
+        //HRVDataManager hrvManager = new HRVDataManager(getContext());
+
         cameraExecutor = Executors.newSingleThreadExecutor();
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -117,12 +123,6 @@ public class MeasureFragment extends Fragment {
             ActivityCompat.requestPermissions(
                     requireActivity(), REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
-
-        redColorChart = binding.redColorChart;//view.findViewById(R.id.red_color_chart);
-
-        heartRateTextView = binding.heartRateText;
-        //setupChart();
-        HRVDataManager hrvManager = new HRVDataManager(getContext());
         return root;
     }
 
@@ -155,7 +155,7 @@ public class MeasureFragment extends Fragment {
             case 2:
                 getActivity().runOnUiThread(new Runnable() {
                     public void run() {
-                        measureButton.setText("Doing Data Analysis\nTap to Repeat");
+                        measureButton.setText("Finished Data Recording\nTap to Repeat");
                     }
                 });
                 doingDataSample = false;

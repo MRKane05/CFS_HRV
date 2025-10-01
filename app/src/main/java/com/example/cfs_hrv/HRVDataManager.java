@@ -1,5 +1,6 @@
 package com.example.cfs_hrv;
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -265,8 +266,15 @@ public class HRVDataManager {
         return sdf.format(new Date());
     }
 
+    private File getSaveFile() {
+        //return new File(context.getFilesDir(), FILENAME);
+        //return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FILENAME);
+        return new File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), FILENAME);
+    }
+
     private void loadAllData() {
-        File file = new File(context.getFilesDir(), FILENAME);
+        File file = getSaveFile(); //new File(context.getFilesDir(), FILENAME);
+        //File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), FILENAME);
 
         if (!file.exists()) {
             return;
@@ -285,7 +293,7 @@ public class HRVDataManager {
     }
 
     private void saveAllData() {
-        File file = new File(context.getFilesDir(), FILENAME);
+        File file = getSaveFile(); //new File(context.getFilesDir(), FILENAME);
 
         try (FileWriter writer = new FileWriter(file)) {
             gson.toJson(allData, writer);
@@ -296,7 +304,7 @@ public class HRVDataManager {
     }
 
     public void saveRawDataFile(String thisData) {
-        File file = new File(context.getFilesDir(), FILENAME);
+        File file = getSaveFile(); //new File(context.getFilesDir(), FILENAME);
 
         try (FileWriter writer = new FileWriter(file)) {
             //gson.toJson(allData, writer);

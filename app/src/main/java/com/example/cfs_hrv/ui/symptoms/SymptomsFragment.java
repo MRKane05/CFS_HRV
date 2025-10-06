@@ -148,7 +148,8 @@ public class SymptomsFragment extends Fragment {
         //String predictionString = "Todays Fatigue Level: " + dataEntry.getFatigueLevel() + "\n";
         //predictionString += "Todays Headache Level: " + dataEntry.getHeadacheLevel() + "\n";
 
-        String predictionString  = "Predicted Level: " + FatigueLevelPredictor.predictFatigueLevelRange(historicHRV, dataEntry) + "\n";
+        String predictionString  = "HRV Score: " + FatigueLevelPredictor.getDailyScore(historicHRV, dataEntry) + "\n";
+        predictionString += "Predicted Level: " + FatigueLevelPredictor.predictFatigueLevelRange(historicHRV, dataEntry) + "\n";
 
         predictionString += "Trend Prediction: " + FatigueLevelPredictor.predictFatigueLevelRangeWithTrend(historicHRV, dataEntry, 7) + "\n";
 // Get confidence level

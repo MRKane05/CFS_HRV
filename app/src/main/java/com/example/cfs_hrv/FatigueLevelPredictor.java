@@ -136,7 +136,36 @@ public class FatigueLevelPredictor {
         return Math.max(25.0, baseConfidence);
     }
 
-    //Range string approach
+    public static double getDailyScore(List<HRVData> historicalData, HRVData newMeasurement) {
+
+        if (historicalData == null || historicalData.isEmpty()) {
+            return 3; // Default to moderate fatigue if no historical data
+        }
+
+        // Filter out any invalid historical data
+        List<HRVData> validHistoricalData = historicalData.stream()
+                .filter(data -> data.getFatigueLevel() >= 1 && data.getFatigueLevel() <= 5)
+                .filter(data -> data.getRmssd() > 0 && data.getHeartRate() > 0)
+                .collect(Collectors.toList());
+
+        if (validHistoricalData.isEmpty()) {
+            return 0;
+        }
+
+        double averageRMSSD = 0;
+        double averageHR = 0;
+        for (HRVData data : validHistoricalData) {
+            averageRMSSD += data.getRmssd();
+            averageHR += data.getHeartRate();
+        }
+
+        averageRMSSD /= validHistoricalData.size();
+        averageHR /= validHistoricalData.size();
+
+        return  ((newMeasurement.getRmssd() / averageRMSSD) * 0.7) + ((newMeasurement.getHeartRate() / averageHR) * 0.3);
+    }
+
+        //Range string approach
     /**
      * Predicts fatigue level based on RMSSD and heart rate using historical data patterns
      * @param historicalData List of previous HRVData measurements with known fatigue levels

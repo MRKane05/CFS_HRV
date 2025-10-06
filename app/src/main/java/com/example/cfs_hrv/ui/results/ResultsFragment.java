@@ -41,18 +41,6 @@ public class ResultsFragment extends Fragment {
         binding = FragmentNotificationsBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        exportDataButton = binding.btnCpytodocs;
-        importDataButton = binding.btnCpyfromdocs;
-
-        exportDataButton.setOnClickListener(v -> CopyDataToDocuments());
-        importDataButton.setOnClickListener(v -> CopyDataFromDocuments());
-
-        textView = binding.textNotifications;
-        //resultsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
-
-
-
-
         return root;
     }
 

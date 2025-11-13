@@ -99,6 +99,7 @@ public class MeasureFragment extends Fragment {
          */
         //All of our setup stuff for the measure view
         //progress_text = binding.progressText;// .findViewById(R.id.progress_text);
+        //setupChart();
         progressBar = binding.progressBar;
         previewView = binding.previewView; //.findViewById(R.id.preview_view);
         measureButton = binding.measureButton; //.findViewById(R.id.torch_button);
@@ -112,7 +113,7 @@ public class MeasureFragment extends Fragment {
         redColorChart = binding.redColorChart;//view.findViewById(R.id.red_color_chart);
 
         heartRateTextView = binding.heartRateText;
-        //setupChart();
+
         //HRVDataManager hrvManager = new HRVDataManager(getContext());
 
         cameraExecutor = Executors.newSingleThreadExecutor();
@@ -123,6 +124,8 @@ public class MeasureFragment extends Fragment {
             ActivityCompat.requestPermissions(
                     requireActivity(), REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
         }
+
+        setupChart();
         return root;
     }
 
@@ -191,14 +194,14 @@ public class MeasureFragment extends Fragment {
         redColorChart.setDrawGridBackground(false);
         redColorChart.setDrawBorders(true);
         redColorChart.setAutoScaleMinMaxEnabled(true);
-        redColorChart.setTouchEnabled(true);
-        redColorChart.setDragEnabled(true);
+        redColorChart.setTouchEnabled(false);
+        redColorChart.setDragEnabled(false);
         redColorChart.setScaleEnabled(true);
         redColorChart.setPinchZoom(true);
 
         // Chart description
         Description description = new Description();
-        description.setText("Red Color Values Over Time");
+        description.setText("PPG Measure");
         description.setTextSize(12f);
         description.setTextColor(Color.WHITE);
         redColorChart.setDescription(description);
@@ -207,27 +210,32 @@ public class MeasureFragment extends Fragment {
         XAxis xAxis = redColorChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
-        xAxis.setLabelCount(5, true);
+        xAxis.setLabelCount(0);
+        //xAxis.setLabelCount(5, false);
 
         // Y-axis setup
         YAxis leftAxis = redColorChart.getAxisLeft();
-        leftAxis.setAxisMinimum(180f);  //0
-        leftAxis.setAxisMaximum(210f);  //255
-        leftAxis.setDrawGridLines(true);
+        leftAxis.setAxisMinimum(0f);  //0
+        leftAxis.setAxisMaximum(255f);  //255
+        leftAxis.setDrawGridLines(false);
 
         // Disable right axis
         redColorChart.getAxisRight().setEnabled(false);
+        redColorChart.getAxisLeft().setEnabled(false);
+        redColorChart.getXAxis().setEnabled(false);
 
         // Initialize empty data
-        LineDataSet dataSet = new LineDataSet(redColorEntries, "Red Color Value");
-        dataSet.setColor(Color.RED);
+        /*
+        LineDataSet dataSet = new LineDataSet(redColorEntries, "PPG Measure");
+        dataSet.setColor(Color.WHITE);
         dataSet.setDrawCircles(false);
         dataSet.setDrawValues(false);
-        dataSet.setLineWidth(2f);
+        dataSet.setLineWidth(4f);
         dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+         */
 
-        LineData lineData = new LineData(dataSet);
-        redColorChart.setData(lineData);
+        //LineData lineData = new LineData(dataSet);
+        //redColorChart.setData(lineData);
         redColorChart.invalidate();
     }
 
@@ -235,10 +243,11 @@ public class MeasureFragment extends Fragment {
     private final int MAX_DATA_POINTS = 50; //So we don't chew up memory pointlessly
     private void updateRedColorChart(float avgValue) {
         // Calculate average red value from all sampled pixels
-        updateGraph(avgValue);
+        float invertedValue = 255f - avgValue;
+        updateGraph(invertedValue);
         // Add new data point
         dataPointCount++;
-        redColorEntries.add(new Entry(dataPointCount, avgValue));
+        redColorEntries.add(new Entry(dataPointCount, invertedValue));
 
         // Remove old data points if we exceed max
         if (redColorEntries.size() > MAX_DATA_POINTS) {
@@ -268,11 +277,11 @@ public class MeasureFragment extends Fragment {
                 redColorChart.notifyDataSetChanged();
             } else {
                 // Create new dataset
-                dataSet = new LineDataSet(redColorEntries, "Red Color Value");
-                dataSet.setColor(Color.RED);
+                dataSet = new LineDataSet(redColorEntries, "PPG Value");
+                dataSet.setColor(Color.LTGRAY);
                 dataSet.setDrawCircles(false);
                 dataSet.setDrawValues(false);
-                dataSet.setLineWidth(2f);
+                dataSet.setLineWidth(3f);
                 dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
                 LineData data = new LineData(dataSet);

@@ -6,7 +6,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -40,6 +42,14 @@ public class SymptomsFragment extends Fragment {
     // Radio button references
     private RadioButton rbtn_fatigueLevel0, rbtn_fatigueLevel1, rbtn_fatigueLevel2, rbtn_fatigueLevel3, rbtn_fatigueLevel4, rbtn_fatigueLevel5;
     private RadioButton rbtn_HeadacheLevel0, rbtn_HeadacheLevel1, rbtn_HeadacheLevel2, rbtn_HeadacheLevel3, rbtn_HeadacheLevel4, rbtn_HeadacheLevel5;
+
+    private ImageButton btn_daybackward, btn_dayforward;
+    private TextView dayDisplayText;
+    private int dayOffset;  //Offsets our current day to view other data
+    private TextView textView;
+
+    private RadioGroup fatigueGroup, headacheGroup;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         SymptomsViewModel symptomsViewModel =
@@ -50,14 +60,19 @@ public class SymptomsFragment extends Fragment {
 
         hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
 
-        final TextView textView = binding.predictionText;
+        textView = binding.predictionText;
         //symptomsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
         //inputField = binding.inputField;
         //sendButton = binding.sendButton;
+        btn_daybackward = binding.btnDayback;
+        btn_dayforward = binding.btnDayforward;
+        dayDisplayText = binding.txtDaytitle;
 
+        fatigueGroup = binding.fatigueRadioGroup;
+        headacheGroup = binding.headacheRadioGroup;
 
-            // Initialize radio buttons
+        // Initialize radio buttons
         initializeRadioButtons(root);
 
         // Set up click listeners
@@ -68,9 +83,9 @@ public class SymptomsFragment extends Fragment {
         boolean hasDataForToday=hrvData.getTodaysData() != null;
 
         if (hasDataForToday) {
-            loadCurrentFatigueLevel();
+            loadCurrentFatigueLevel(hrvData.getTodaysData().getFatigueLevel());
 
-            loadCurrentHeadacheLevel();
+            loadCurrentHeadacheLevel(hrvData.getTodaysData().getHeadacheLevel());
 
             String predictedFatigueLevel = MakePrediction();
             textView.setText(predictedFatigueLevel);
@@ -78,8 +93,52 @@ public class SymptomsFragment extends Fragment {
             textView.setText("No data recorded for today");
         }
 
+        //Change our text header so that we're displaying todays data as this is what we'll drop in on by default
+        dayDisplayText.setText("Today " + hrvData.getTodaysData().getDate().toString());
 
+        btn_dayforward.setOnClickListener(v -> GotoNextDay());
+        btn_daybackward.setOnClickListener(v -> GotoPreviousDay());
         return root;
+    }
+
+    void GotoNextDay() {
+        //We need to cycle our current day back and collect the data for it
+        dayOffset += 1;
+        if (dayOffset > 0) {    //Quick clamp so that we can't go into the future
+            dayOffset = 0;
+        }
+        RefreshPageDate();
+    }
+
+    void GotoPreviousDay() {
+        //We need to cycle our current day forward and collect the data for it
+        dayOffset -= 1;
+        RefreshPageDate();
+    }
+
+    void RefreshPageDate() {
+        HRVData sampleData = hrvData.getOffsetData(dayOffset);
+        //We need to change our radio buttons to the radio buttons set on this date
+        //We need to have the radio buttons take input from the user to set the date
+
+        boolean hasDataForToday= sampleData != null;
+
+
+        if (hasDataForToday) {
+            if (dayOffset == 0) {
+                dayDisplayText.setText("Today " + sampleData.getDate());
+            } else{
+                dayDisplayText.setText(sampleData.getDate());
+            }
+
+            loadCurrentFatigueLevel(sampleData.getFatigueLevel());
+            loadCurrentHeadacheLevel(sampleData.getHeadacheLevel());
+
+            String predictedFatigueLevel = MakePrediction();
+            textView.setText(predictedFatigueLevel);
+        } else {
+            dayDisplayText.setText("No data for this date");
+        }
     }
 
     void getInputFieldValue() {
@@ -97,7 +156,6 @@ public class SymptomsFragment extends Fragment {
         if (hrvData ==null) {
             hrvData = new HRVDataManager(getContext()); //This is a terrible way of doing things...
         }
-
 
         List<ForestDataPoint> historicalData = new ArrayList<>();
         List<HRVData> allHRVData = hrvData.getAllData();
@@ -122,7 +180,10 @@ public class SymptomsFragment extends Fragment {
         HRVBaselineAnalyzer baselineAnalyzer = new HRVBaselineAnalyzer(historicalData.size());
         baselineAnalyzer.updateBaseline(historicalData);
 
-        HRVData dataEntry = hrvData.getTodaysData();// allHRVData.get(allHRVData.size()-1);    //Todays entry
+        HRVData dataEntry = hrvData.getOffsetData(dayOffset);// hrvData.getTodaysData();// allHRVData.get(allHRVData.size()-1);    //Todays entry
+        if (dataEntry == null) {
+            return "No data avaliable";
+        }
         //(double sdnn, double rmssd, double pnn50) {
         //fatiguePrediction = fatigueModel.predict(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
 
@@ -230,7 +291,7 @@ public class SymptomsFragment extends Fragment {
         currentFatigueLevel = fatigueLevel;
 
         // Save to your dataset here
-        hrvData.setTodaysFatigueLevel(fatigueLevel);
+        hrvData.setFatigueLevel(fatigueLevel, dayOffset);
     }
 
     private void onHeadacheLevelSelected(int headacheLevel) {
@@ -244,15 +305,17 @@ public class SymptomsFragment extends Fragment {
         currentHeadacheLevel = headacheLevel;
 
         // Save to your dataset here
-        hrvData.setTodaysHeadacheLevel(headacheLevel);
+        //hrvData.setTodaysHeadacheLevel(headacheLevel);
+        hrvData.setHeadacheLevel(headacheLevel, dayOffset);
+
     }
 
     /**
      * Load the current fatigue level from your dataset and update UI
      */
-    private void loadCurrentFatigueLevel() {
+    private void loadCurrentFatigueLevel(int savedFatigueLevel) {
         // Replace this with your actual dataset retrieval method
-        int savedFatigueLevel = hrvData.getTodaysData().getFatigueLevel();
+        //int savedFatigueLevel = hrvData.getTodaysData().getFatigueLevel();
 
         if (savedFatigueLevel >= 0 && savedFatigueLevel <= 5) {
             currentFatigueLevel = savedFatigueLevel;
@@ -262,9 +325,9 @@ public class SymptomsFragment extends Fragment {
     }
 
 
-    private void loadCurrentHeadacheLevel() {
+    private void loadCurrentHeadacheLevel(int savedHeadacheLevel) {
         // Replace this with your actual dataset retrieval method
-        int savedHeadacheLevel = hrvData.getTodaysData().getHeadacheLevel();
+        //int savedHeadacheLevel = hrvData.getTodaysData().getHeadacheLevel();
 
         if (savedHeadacheLevel >= 0 && savedHeadacheLevel <= 5) {
             currentHeadacheLevel = savedHeadacheLevel;
@@ -276,21 +339,27 @@ public class SymptomsFragment extends Fragment {
      * Clear all radio button selections
      */
     private void clearAllRadioButtons() {
+        fatigueGroup.clearCheck();
+        /*
         rbtn_fatigueLevel0.setChecked(false);
         rbtn_fatigueLevel1.setChecked(false);
         rbtn_fatigueLevel2.setChecked(false);
         rbtn_fatigueLevel3.setChecked(false);
         rbtn_fatigueLevel4.setChecked(false);
         rbtn_fatigueLevel5.setChecked(false);
+         */
     }
 
     private void clearAllHeadacheRadioButtons() {
+        headacheGroup.clearCheck();
+        /*
         rbtn_HeadacheLevel0.setChecked(false);
         rbtn_HeadacheLevel1.setChecked(false);
         rbtn_HeadacheLevel2.setChecked(false);
         rbtn_HeadacheLevel3.setChecked(false);
         rbtn_HeadacheLevel4.setChecked(false);
         rbtn_HeadacheLevel5.setChecked(false);
+         */
     }
 
     /**
@@ -328,27 +397,5 @@ public class SymptomsFragment extends Fragment {
         rbtn_HeadacheLevel3.setChecked(level == 3);
         rbtn_HeadacheLevel4.setChecked(level == 4);
         rbtn_HeadacheLevel5.setChecked(level == 5);
-        /*
-        switch (level) {
-            case 0:
-                rbtn_HeadacheLevel0.setChecked(checked);
-                break;
-            case 1:
-                rbtn_HeadacheLevel1.setChecked(checked);
-                break;
-            case 2:
-                rbtn_HeadacheLevel2.setChecked(checked);
-                break;
-            case 3:
-                rbtn_HeadacheLevel3.setChecked(checked);
-                break;
-            case 4:
-                rbtn_HeadacheLevel4.setChecked(checked);
-                break;
-            case 5:
-                rbtn_HeadacheLevel5.setChecked(checked);
-                break;
-        }
-         */
     }
 }

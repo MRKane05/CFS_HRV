@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -98,11 +99,43 @@ public class HRVDataManager {
         return true;
     }
 
+    public boolean setFatigueLevel(int fatigueLevel, int dayOffset) {
+        HRVData todaysData = getOffsetData(dayOffset);
+
+        if (todaysData == null) {
+            // Create a new entry with default values and the specified fatigue level
+            HRVData newData = new HRVData(0, 0, 0, 0, 0, 0, fatigueLevel, 0);
+            allData.add(newData);
+            saveAllData();
+            return true;
+        }
+
+        todaysData.setFatigueLevel(fatigueLevel);
+        saveAllData();
+        return true;
+    }
+
     /**
      * Set headache level for today's entry
      */
     public boolean setTodaysHeadacheLevel(int headacheLevel) {
         HRVData todaysData = getTodaysData();
+
+        if (todaysData == null) {
+            // Create a new entry with default values and the specified headache level
+            HRVData newData = new HRVData(0, 0, 0, 0, 0, 0, 0, headacheLevel);
+            allData.add(newData);
+            saveAllData();
+            return true;
+        }
+
+        todaysData.setHeadacheLevel(headacheLevel);
+        saveAllData();
+        return true;
+    }
+
+    public boolean setHeadacheLevel(int headacheLevel, int dayOffset) {
+        HRVData todaysData = getOffsetData(dayOffset);
 
         if (todaysData == null) {
             // Create a new entry with default values and the specified headache level
@@ -125,6 +158,17 @@ public class HRVDataManager {
 
         for (HRVData data : allData) {
             if (today.equals(data.getDate())) {
+                return data;
+            }
+        }
+
+        return null;
+    }
+
+    public HRVData getOffsetData(int offset) {
+        String date = getDateWithOffset(offset);
+        for (HRVData data : allData) {
+            if (date.equals(data.getDate())) {
                 return data;
             }
         }
@@ -264,6 +308,13 @@ public class HRVDataManager {
     private String getCurrentDateString() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         return sdf.format(new Date());
+    }
+
+    private String getDateWithOffset(int dayOffset) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, dayOffset);
+        return sdf.format(calendar.getTime());
     }
 
     private File getSaveFile() {

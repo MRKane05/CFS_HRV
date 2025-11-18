@@ -6,74 +6,145 @@
     android:layout_height="match_parent"
     tools:context=".ui.measure.MeasureFragment">
 
+    <!-- Horizontal guidelines for percentage-based positioning -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.19" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_30"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.4" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_55"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.45" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_60"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.49" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_78"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.7" />
+
+    <!-- Vertical guidelines for side margins -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.05" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.95" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_camera_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.25" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_camera_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.75" />
+
+    <!-- Background image - fills entire parent -->
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@color/material_dynamic_neutral40" />
+        app:srcCompat="@mipmap/background_image" />
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/preview_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginStart="120dp"
-        android:layout_marginTop="100dp"
-        android:layout_marginEnd="120dp"
-        android:layout_marginBottom="480dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/measure_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="120dp"
-        android:text="Tap to Begin"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
-
+    <!-- Heart rate text - positioned at top center -->
     <TextView
         android:id="@+id/heart_rate_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#80000000"
         android:padding="8dp"
-        android:text="Heart Rate: -- BPM"
+        android:text="Data"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/red_color_chart"
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:layout_marginBottom="50dp"
-        app:layout_constraintBottom_toTopOf="@+id/measure_button"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+    <!-- Camera preview - positioned using guidelines (10-30% of screen height) -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/preview_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/guideline_30"
+        app:layout_constraintEnd_toStartOf="@id/guideline_camera_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_camera_left"
+        app:layout_constraintTop_toBottomOf="@id/guideline_10" />
 
+    <!-- Progress bar - positioned at 55% of screen height -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
         android:indeterminate="false"
         android:indeterminateDrawable="@android:drawable/progress_horizontal"
         android:max="100"
         android:progress="0"
         android:progressDrawable="@android:drawable/progress_horizontal"
-        app:layout_constraintBottom_toTopOf="@+id/red_color_chart"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toTopOf="@id/guideline_55" />
+
+    <!-- Line chart - positioned between 60-78% of screen height -->
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/red_color_chart"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#172F49"
+        app:layout_constraintBottom_toTopOf="@id/guideline_78"
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toBottomOf="@id/guideline_60" />
+
+    <!-- Measure button - positioned from 78% to ~88% of screen height -->
+    <Button
+        android:id="@+id/measure_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:elegantTextHeight="false"
+        android:text="Tap to Begin"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintHeight_percent="0.2"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toBottomOf="@id/guideline_78"
+        app:layout_constraintVertical_bias="0.2" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

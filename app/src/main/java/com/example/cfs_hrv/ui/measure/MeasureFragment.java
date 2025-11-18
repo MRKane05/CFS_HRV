@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -191,8 +192,11 @@ public class MeasureFragment extends Fragment {
 
     private void setupChart() {
         // Chart styling
+//        redColorChart.setBackgroundTintMode(PorterDuff.Mode.DARKEN);
+//        redColorChart.setBackgroundColor(999999);
+
         redColorChart.setDrawGridBackground(false);
-        redColorChart.setDrawBorders(true);
+        redColorChart.setDrawBorders(false);
         redColorChart.setAutoScaleMinMaxEnabled(true);
         redColorChart.setTouchEnabled(false);
         redColorChart.setDragEnabled(false);
@@ -281,7 +285,7 @@ public class MeasureFragment extends Fragment {
                 dataSet.setColor(Color.LTGRAY);
                 dataSet.setDrawCircles(false);
                 dataSet.setDrawValues(false);
-                dataSet.setLineWidth(3f);
+                dataSet.setLineWidth(2f);
                 dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
 
                 LineData data = new LineData(dataSet);

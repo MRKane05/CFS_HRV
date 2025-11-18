@@ -7,50 +7,97 @@
     android:layout_height="match_parent"
     tools:context=".ui.symptoms.SymptomsFragment">
 
-    <!-- Button to Submit -->
+    <!-- Horizontal guidelines for percentage-based positioning -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_01"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.01" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.10" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_12"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.12" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_30"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.30" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_35"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.35" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_53"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.53" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_58"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.58" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_76"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.76" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_81"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.81" />
+
+    <!-- Background image - fills entire parent -->
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        app:srcCompat="@color/material_dynamic_neutral40" />
+        app:srcCompat="@mipmap/background_image" />
 
-    <TextView
-        android:id="@+id/prediction_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="8dp"
-        android:text="Todays prediction:"
-        android:textAlignment="center"
-        android:textColor="#000000"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/headacheRadioGroup" />
-
+    <!-- Day Title Group - positioned at 1-10% of screen height -->
     <LinearLayout
-        android:id="@+id/linearLayout2"
-        android:layout_width="match_parent"
+        android:id="@+id/DayTitleGroup"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
+        android:background="#FF225271"
         android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_10"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="@+id/guideline_01">
 
         <ImageButton
             android:id="@+id/btn_dayback"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:src="@android:drawable/arrow_down_float" />
@@ -59,149 +106,197 @@
             android:id="@+id/txt_daytitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:text="Today 15th" />
+            android:layout_gravity="center_vertical"
+            android:text="Today 15th"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp" />
 
         <ImageButton
             android:id="@+id/btn_dayforward"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:src="@android:drawable/arrow_up_float" />
+
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/fatigueTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="Fatigue Level"
-        android:textColor="#000000"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="@+id/imageView"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout2" />
-
-    <RadioGroup
-        android:id="@+id/fatigueRadioGroup"
+    <!-- Fatigue Layout Group - positioned at 12-30% of screen height -->
+    <LinearLayout
+        android:id="@+id/FatigueLayoutGroup"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layoutDirection="inherit"
-        android:orientation="horizontal"
+        android:layout_height="0dp"
+        android:background="#225271"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_30"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fatigueTitle">
+        app:layout_constraintTop_toTopOf="@+id/guideline_12">
 
-        <RadioButton
-            android:id="@+id/rbtn_fatigueLevel0"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/fatigueTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0" />
+            android:text="Fatigue Level"
+            android:textAlignment="center"
+            android:textColor="#FFCFCFCF"
+            android:textSize="20sp" />
 
-        <RadioButton
-            android:id="@+id/rbtn_fatigueLevel1"
-            android:layout_width="wrap_content"
+        <RadioGroup
+            android:id="@+id/fatigueRadioGroup"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1" />
+            android:layout_marginTop="8dp"
+            android:layoutDirection="inherit"
+            android:orientation="horizontal">
 
-        <RadioButton
-            android:id="@+id/rbtn_fatigueLevel2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="2" />
+            <RadioButton
+                android:id="@+id/rbtn_fatigueLevel0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0"
+                android:textColor="#FFCFCFCF" />
 
-        <RadioButton
-            android:id="@+id/rbtn_fatigueLevel3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="3" />
+            <RadioButton
+                android:id="@+id/rbtn_fatigueLevel1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1"
+                android:textColor="#FFCFCFCF" />
 
-        <RadioButton
-            android:id="@+id/rbtn_fatigueLevel4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="4" />
+            <RadioButton
+                android:id="@+id/rbtn_fatigueLevel2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="2"
+                android:textColor="#FFCFCFCF" />
 
-        <RadioButton
-            android:id="@+id/rbtn_fatigueLevel5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="5" />
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/rbtn_fatigueLevel3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3"
+                android:textColor="#FFCFCFCF" />
 
-    <TextView
-        android:id="@+id/headacheTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="Estimated Exertion"
-        android:textColor="#000000"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="@+id/imageView"
-        app:layout_constraintStart_toStartOf="@+id/imageView"
-        app:layout_constraintTop_toBottomOf="@+id/fatigueRadioGroup" />
+            <RadioButton
+                android:id="@+id/rbtn_fatigueLevel4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="4"
+                android:textColor="#FFCFCFCF" />
 
-    <RadioGroup
-        android:id="@+id/headacheRadioGroup"
+            <RadioButton
+                android:id="@+id/rbtn_fatigueLevel5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="5"
+                android:textColor="#FFCFCFCF" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <!-- Headache/Exertion Layout Group - positioned at 35-53% of screen height -->
+    <LinearLayout
+        android:id="@+id/HeadacheLayoutGroup"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layoutDirection="inherit"
-        android:orientation="horizontal"
+        android:layout_height="0dp"
+        android:background="#FF225271"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_53"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/headacheTitle">
+        app:layout_constraintTop_toTopOf="@+id/guideline_35">
 
-        <RadioButton
-            android:id="@+id/rbtn_headacheLevel0"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/headacheTitle"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0" />
+            android:text="Estimated Exertion"
+            android:textAlignment="center"
+            android:textColor="#FFCFCFCF"
+            android:textSize="20sp" />
 
-        <RadioButton
-            android:id="@+id/rbtn_headacheLevel1"
-            android:layout_width="wrap_content"
+        <RadioGroup
+            android:id="@+id/headacheRadioGroup"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="1" />
+            android:layout_marginTop="8dp"
+            android:layoutDirection="inherit"
+            android:orientation="horizontal">
 
-        <RadioButton
-            android:id="@+id/rbtn_headacheLevel2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="2" />
+            <RadioButton
+                android:id="@+id/rbtn_headacheLevel0"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0"
+                android:textColor="#FFCFCFCF" />
 
-        <RadioButton
-            android:id="@+id/rbtn_headacheLevel3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="3" />
+            <RadioButton
+                android:id="@+id/rbtn_headacheLevel1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1"
+                android:textColor="#FFCFCFCF" />
 
-        <RadioButton
-            android:id="@+id/rbtn_headacheLevel4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="4" />
+            <RadioButton
+                android:id="@+id/rbtn_headacheLevel2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="2"
+                android:textColor="#FFCFCFCF" />
 
-        <RadioButton
-            android:id="@+id/rbtn_headacheLevel5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="5" />
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/rbtn_headacheLevel3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3"
+                android:textColor="#FFCFCFCF" />
+
+            <RadioButton
+                android:id="@+id/rbtn_headacheLevel4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="4"
+                android:textColor="#FFCFCFCF" />
+
+            <RadioButton
+                android:id="@+id/rbtn_headacheLevel5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="5"
+                android:textColor="#FFCFCFCF" />
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <!-- Prediction Text - positioned at 58% of screen height -->
+    <TextView
+        android:id="@+id/prediction_text"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#FF225271"
+        android:gravity="center"
+        android:text="Todays prediction:"
+        android:textAlignment="center"
+        android:textColor="#CFCFCF"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_76"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline_58" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

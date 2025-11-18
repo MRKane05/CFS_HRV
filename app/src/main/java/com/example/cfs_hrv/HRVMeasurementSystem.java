@@ -25,8 +25,8 @@ public class HRVMeasurementSystem {
 
         @Override
         public String toString() {
-            return String.format("HR: %.1f BPM, RMSSD: %.1f ms, Valid beats: %d",
-                    heartRate, rmssd, validBeats);
+            return String.format("HR: %.1f BPM, Valid beats: %d\nRMSSD: %.1f ms",
+                    heartRate, validBeats, rmssd);
             /*
             return String.format("HR: %.1f BPM, SDNN: %.1f ms, RMSSD: %.1f ms, pNN50: %.1f%%, Valid beats: %d",
                     heartRate, sdnn, rmssd, pnn50, validBeats);

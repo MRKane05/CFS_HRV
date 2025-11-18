@@ -91,6 +91,7 @@
         android:background="#80000000"
         android:padding="8dp"
         android:text="Data"
+        android:textAlignment="center"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"

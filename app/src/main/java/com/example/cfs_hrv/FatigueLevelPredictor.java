@@ -29,13 +29,13 @@ public class FatigueLevelPredictor {
 
         // Calculate historical averages for each fatigue level
         double[] avgRmssdByFatigue = new double[6]; // Index 0 unused, 1-5 for fatigue levels
-        double[] avgHRByFatigue = new double[6];
+        //double[] avgHRByFatigue = new double[6];
         int[] countByFatigue = new int[6];
 
         for (HRVData data : validHistoricalData) {
             int fatigueLevel = data.getFatigueLevel();
             avgRmssdByFatigue[fatigueLevel] += data.getRmssd();
-            avgHRByFatigue[fatigueLevel] += data.getHeartRate();
+            //avgHRByFatigue[fatigueLevel] += data.getHeartRate();
             countByFatigue[fatigueLevel]++;
         }
 
@@ -43,7 +43,7 @@ public class FatigueLevelPredictor {
         for (int i = 1; i <= 5; i++) {
             if (countByFatigue[i] > 0) {
                 avgRmssdByFatigue[i] /= countByFatigue[i];
-                avgHRByFatigue[i] /= countByFatigue[i];
+                //avgHRByFatigue[i] /= countByFatigue[i];
             }
         }
 
@@ -56,10 +56,11 @@ public class FatigueLevelPredictor {
 
             // Calculate weighted distance (RMSSD weighted more heavily based on observed correlation)
             double rmssdDiff = Math.abs(newMeasurement.getRmssd() - avgRmssdByFatigue[fatigueLevel]);
-            double hrDiff = Math.abs(newMeasurement.getHeartRate() - avgHRByFatigue[fatigueLevel]);
+            //double hrDiff = Math.abs(newMeasurement.getHeartRate() - avgHRByFatigue[fatigueLevel]);
 
             // Weight RMSSD more heavily since it showed stronger correlation
-            double score = (rmssdDiff * 0.7) + (hrDiff * 0.3);
+            //Need to remove the hrDiff as we're not calculating brachycardia with this measure due to it being ineffective
+            double score = rmssdDiff; //(rmssdDiff * 0.7) + (hrDiff * 0.3);
 
             if (score < bestScore) {
                 bestScore = score;
@@ -174,7 +175,7 @@ public class FatigueLevelPredictor {
      */
     public static String predictFatigueLevelRange(List<HRVData> historicalData, HRVData newMeasurement) {
         if (historicalData == null || historicalData.isEmpty()) {
-            return "2-4"; // Default to moderate range if no historical data
+            return "No Data Avaliable"; // Default to moderate range if no historical data
         }
 
         // Filter out any invalid historical data
@@ -184,18 +185,18 @@ public class FatigueLevelPredictor {
                 .collect(Collectors.toList());
 
         if (validHistoricalData.isEmpty()) {
-            return "2-4";
+            return "No Data Avaliable";
         }
 
         // Calculate historical averages for each fatigue level
         double[] avgRmssdByFatigue = new double[6]; // Index 0 unused, 1-5 for fatigue levels
-        double[] avgHRByFatigue = new double[6];
+        //double[] avgHRByFatigue = new double[6];
         int[] countByFatigue = new int[6];
 
         for (HRVData data : validHistoricalData) {
             int fatigueLevel = data.getFatigueLevel();
             avgRmssdByFatigue[fatigueLevel] += data.getRmssd();
-            avgHRByFatigue[fatigueLevel] += data.getHeartRate();
+            //avgHRByFatigue[fatigueLevel] += data.getHeartRate();
             countByFatigue[fatigueLevel]++;
         }
 
@@ -203,7 +204,7 @@ public class FatigueLevelPredictor {
         for (int i = 1; i <= 5; i++) {
             if (countByFatigue[i] > 0) {
                 avgRmssdByFatigue[i] /= countByFatigue[i];
-                avgHRByFatigue[i] /= countByFatigue[i];
+                //avgHRByFatigue[i] /= countByFatigue[i];
             }
         }
 
@@ -218,10 +219,11 @@ public class FatigueLevelPredictor {
 
             // Calculate weighted distance (RMSSD weighted more heavily based on observed correlation)
             double rmssdDiff = Math.abs(newMeasurement.getRmssd() - avgRmssdByFatigue[fatigueLevel]);
-            double hrDiff = Math.abs(newMeasurement.getHeartRate() - avgHRByFatigue[fatigueLevel]);
+            //double hrDiff = Math.abs(newMeasurement.getHeartRate() - avgHRByFatigue[fatigueLevel]);
 
             // Weight RMSSD more heavily since it showed stronger correlation
-            scores[fatigueLevel] = (rmssdDiff * 0.7) + (hrDiff * 0.3);
+            // From further reading we shouldn't consider the bradycardia symptoms in this reading, so lets drop the hrDiff
+            scores[fatigueLevel] = rmssdDiff; //(rmssdDiff * 0.7) + (hrDiff * 0.3);
         }
 
         // Find best match and check for close alternatives
@@ -289,7 +291,7 @@ public class FatigueLevelPredictor {
     public static String predictFatigueLevelRangeWithTrend(List<HRVData> historicalData,
                                                       HRVData newMeasurement,
                                                       int recentDaysToConsider) {
-        if (historicalData == null || historicalData.size() < 2) {
+        if (historicalData == null || historicalData.size() < 5) {
             return predictFatigueLevelRange(historicalData, newMeasurement);
         }
 
@@ -297,7 +299,7 @@ public class FatigueLevelPredictor {
         String basePrediction = predictFatigueLevelRange(historicalData, newMeasurement);
 
         // If base prediction is already a range, trust it
-        if (basePrediction.contains("-")) {
+        if (basePrediction.contains("No")) {
             return basePrediction;
         }
 

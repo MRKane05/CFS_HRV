@@ -1,5 +1,10 @@
 package com.example.cfs_hrv.ui.symptoms;
 
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Locale;
+
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +28,9 @@ import com.example.cfs_hrv.HRVDataManager;
 import com.example.cfs_hrv.databinding.FragmentDashboardBinding;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 
 public class SymptomsFragment extends Fragment {
@@ -41,14 +48,14 @@ public class SymptomsFragment extends Fragment {
     //Fatigue selection buttons
     // Radio button references
     private RadioButton rbtn_fatigueLevel0, rbtn_fatigueLevel1, rbtn_fatigueLevel2, rbtn_fatigueLevel3, rbtn_fatigueLevel4, rbtn_fatigueLevel5;
-    private RadioButton rbtn_HeadacheLevel0, rbtn_HeadacheLevel1, rbtn_HeadacheLevel2, rbtn_HeadacheLevel3, rbtn_HeadacheLevel4, rbtn_HeadacheLevel5;
+    //private RadioButton rbtn_HeadacheLevel0, rbtn_HeadacheLevel1, rbtn_HeadacheLevel2, rbtn_HeadacheLevel3, rbtn_HeadacheLevel4, rbtn_HeadacheLevel5;
 
     private ImageButton btn_daybackward, btn_dayforward;
     private TextView dayDisplayText;
     private int dayOffset;  //Offsets our current day to view other data
     private TextView textView;
 
-    private RadioGroup fatigueGroup, headacheGroup;
+    private RadioGroup fatigueGroup;//, headacheGroup;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -70,7 +77,7 @@ public class SymptomsFragment extends Fragment {
         dayDisplayText = binding.txtDaytitle;
 
         fatigueGroup = binding.fatigueRadioGroup;
-        headacheGroup = binding.headacheRadioGroup;
+        //headacheGroup = binding.headacheRadioGroup;
 
         // Initialize radio buttons
         initializeRadioButtons(root);
@@ -94,7 +101,7 @@ public class SymptomsFragment extends Fragment {
         }
 
         //Change our text header so that we're displaying todays data as this is what we'll drop in on by default
-        dayDisplayText.setText("Today " + hrvData.getTodaysData().getDate().toString());
+        dayDisplayText.setText("Today");// + hrvData.getTodaysData().getDate().toString());
 
         btn_dayforward.setOnClickListener(v -> GotoNextDay());
         btn_daybackward.setOnClickListener(v -> GotoPreviousDay());
@@ -116,6 +123,25 @@ public class SymptomsFragment extends Fragment {
         RefreshPageDate();
     }
 
+    private String convertDateFormat(String dateString) {
+        try {
+            // Parse the input format (yyyy-MM-dd)
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date date = inputFormat.parse(dateString);
+
+            if (date == null) {
+                return dateString;
+            }
+
+            // Format to output format (dd/MM/yyyy)
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            return outputFormat.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return dateString; // Return original string if parsing fails
+        }
+    }
+
     void RefreshPageDate() {
         HRVData sampleData = hrvData.getOffsetData(dayOffset);
         //We need to change our radio buttons to the radio buttons set on this date
@@ -126,9 +152,10 @@ public class SymptomsFragment extends Fragment {
 
         if (hasDataForToday) {
             if (dayOffset == 0) {
-                dayDisplayText.setText("Today " + sampleData.getDate());
+                dayDisplayText.setText("Today");
             } else{
-                dayDisplayText.setText(sampleData.getDate());
+
+                dayDisplayText.setText(convertDateFormat(sampleData.getDate()));
             }
 
             loadCurrentFatigueLevel(sampleData.getFatigueLevel());
@@ -251,13 +278,15 @@ public class SymptomsFragment extends Fragment {
         rbtn_fatigueLevel3 = binding.rbtnFatigueLevel3;
         rbtn_fatigueLevel4 = binding.rbtnFatigueLevel4;
         rbtn_fatigueLevel5 = binding.rbtnFatigueLevel5;
-
+/*
         rbtn_HeadacheLevel0 = binding.rbtnHeadacheLevel0;
         rbtn_HeadacheLevel1 = binding.rbtnHeadacheLevel1;
         rbtn_HeadacheLevel2 = binding.rbtnHeadacheLevel2;
         rbtn_HeadacheLevel3 = binding.rbtnHeadacheLevel3;
         rbtn_HeadacheLevel4 = binding.rbtnHeadacheLevel4;
         rbtn_HeadacheLevel5 = binding.rbtnHeadacheLevel5;
+
+ */
     }
 
     private void setupRadioButtonListeners() {
@@ -267,13 +296,15 @@ public class SymptomsFragment extends Fragment {
         rbtn_fatigueLevel3.setOnClickListener(v -> onFatigueLevelSelected(3));
         rbtn_fatigueLevel4.setOnClickListener(v -> onFatigueLevelSelected(4));
         rbtn_fatigueLevel5.setOnClickListener(v -> onFatigueLevelSelected(5));
-
+        /*
         rbtn_HeadacheLevel0.setOnClickListener(v -> onHeadacheLevelSelected(0));
         rbtn_HeadacheLevel1.setOnClickListener(v -> onHeadacheLevelSelected(1));
         rbtn_HeadacheLevel2.setOnClickListener(v -> onHeadacheLevelSelected(2));
         rbtn_HeadacheLevel3.setOnClickListener(v -> onHeadacheLevelSelected(3));
         rbtn_HeadacheLevel4.setOnClickListener(v -> onHeadacheLevelSelected(4));
         rbtn_HeadacheLevel5.setOnClickListener(v -> onHeadacheLevelSelected(5));
+
+         */
     }
 
     /**
@@ -351,7 +382,7 @@ public class SymptomsFragment extends Fragment {
     }
 
     private void clearAllHeadacheRadioButtons() {
-        headacheGroup.clearCheck();
+        //headacheGroup.clearCheck();
         /*
         rbtn_HeadacheLevel0.setChecked(false);
         rbtn_HeadacheLevel1.setChecked(false);
@@ -391,11 +422,14 @@ public class SymptomsFragment extends Fragment {
     }
 
     private void setRadioHeadacheButtonChecked(int level, boolean checked) {
+        /*
         rbtn_HeadacheLevel0.setChecked(level == 0);
         rbtn_HeadacheLevel1.setChecked(level == 1);
         rbtn_HeadacheLevel2.setChecked(level == 2);
         rbtn_HeadacheLevel3.setChecked(level == 3);
         rbtn_HeadacheLevel4.setChecked(level == 4);
         rbtn_HeadacheLevel5.setChecked(level == 5);
+
+         */
     }
 }

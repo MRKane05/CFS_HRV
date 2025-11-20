@@ -40,7 +40,7 @@ public class FatigueLevelPredictor {
         }
 
         // Calculate averages
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 0; i <= 5; i++) {
             if (countByFatigue[i] > 0) {
                 avgRmssdByFatigue[i] /= countByFatigue[i];
                 //avgHRByFatigue[i] /= countByFatigue[i];
@@ -51,7 +51,7 @@ public class FatigueLevelPredictor {
         double bestScore = Double.MAX_VALUE;
         int predictedFatigue = 3;
 
-        for (int fatigueLevel = 1; fatigueLevel <= 5; fatigueLevel++) {
+        for (int fatigueLevel = 0; fatigueLevel <= 5; fatigueLevel++) {
             if (countByFatigue[fatigueLevel] == 0) continue;
 
             // Calculate weighted distance (RMSSD weighted more heavily based on observed correlation)
@@ -201,7 +201,7 @@ public class FatigueLevelPredictor {
         }
 
         // Calculate averages
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 0; i <= 5; i++) {
             if (countByFatigue[i] > 0) {
                 avgRmssdByFatigue[i] /= countByFatigue[i];
                 //avgHRByFatigue[i] /= countByFatigue[i];
@@ -210,11 +210,11 @@ public class FatigueLevelPredictor {
 
         // Find the closest matches and determine confidence
         double[] scores = new double[6]; // Index 0 unused, 1-5 for fatigue levels
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 0; i <= 5; i++) {
             scores[i] = Double.MAX_VALUE;
         }
 
-        for (int fatigueLevel = 1; fatigueLevel <= 5; fatigueLevel++) {
+        for (int fatigueLevel = 0; fatigueLevel <= 5; fatigueLevel++) {
             if (countByFatigue[fatigueLevel] == 0) continue;
 
             // Calculate weighted distance (RMSSD weighted more heavily based on observed correlation)

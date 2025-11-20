@@ -34,14 +34,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.30" />
+        app:layout_constraintGuide_percent="0.3" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_35"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.35" />
+        app:layout_constraintGuide_percent="0.34" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_53"
@@ -71,35 +71,72 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.81" />
 
+    <!-- Vertical guidelines for side margins -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.05" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.95" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_camera_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.12" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_camera_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.89" />
+
+
     <!-- Background image - fills entire parent -->
+
+    <!-- Day Title Group - positioned at 1-10% of screen height -->
+
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:backgroundTint="#FFFFFF"
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@mipmap/background_image" />
 
-    <!-- Day Title Group - positioned at 1-10% of screen height -->
     <LinearLayout
+        android:background="@drawable/panel_element"
+        android:backgroundTint="#061e42"
         android:id="@+id/DayTitleGroup"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#FF225271"
         android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@+id/guideline_10"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/guideline_right"
+        app:layout_constraintStart_toStartOf="@id/guideline_left"
         app:layout_constraintTop_toTopOf="@+id/guideline_01">
 
         <ImageButton
             android:id="@+id/btn_dayback"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:backgroundTint="#384A75"
             android:src="@android:drawable/arrow_down_float" />
 
         <TextView
@@ -114,24 +151,27 @@
         <ImageButton
             android:id="@+id/btn_dayforward"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
+            android:backgroundTint="#384A75"
             android:src="@android:drawable/arrow_up_float" />
 
     </LinearLayout>
 
     <!-- Fatigue Layout Group - positioned at 12-30% of screen height -->
     <LinearLayout
+        android:background="@drawable/panel_element"
+        android:backgroundTint="#061e42"
         android:id="@+id/FatigueLayoutGroup"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#225271"
         android:orientation="vertical"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
+
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintBottom_toTopOf="@+id/guideline_30"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline_12">
 
         <TextView
@@ -147,7 +187,9 @@
             android:id="@+id/fatigueRadioGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginLeft="12dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginRight="12dp"
             android:layoutDirection="inherit"
             android:orientation="horizontal">
 
@@ -155,131 +197,114 @@
                 android:id="@+id/rbtn_fatigueLevel0"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
+                android:background="@drawable/radio_button_selector"
+                android:backgroundTint="#0bc521"
+                android:button="@null"
+                android:gravity="center"
                 android:text="0"
-                android:textColor="#FFCFCFCF" />
+                android:textColor="#FFCFCFCF"
+                android:textSize="18sp" />
 
             <RadioButton
                 android:id="@+id/rbtn_fatigueLevel1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
+                android:background="@drawable/radio_button_selector"
+                android:backgroundTint="#54ac13"
+                android:button="@null"
+                android:gravity="center"
                 android:text="1"
-                android:textColor="#FFCFCFCF" />
+                android:textColor="#FFCFCFCF"
+                android:textSize="18sp" />
 
             <RadioButton
                 android:id="@+id/rbtn_fatigueLevel2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
+                android:background="@drawable/radio_button_selector"
+                android:backgroundTint="#b0b211"
+                android:button="@null"
+                android:gravity="center"
                 android:text="2"
-                android:textColor="#FFCFCFCF" />
+                android:textColor="#FFCFCFCF"
+                android:textSize="18sp" />
 
             <RadioButton
                 android:id="@+id/rbtn_fatigueLevel3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
+                android:background="@drawable/radio_button_selector"
+                android:backgroundTint="#bd7a25"
+                android:button="@null"
+                android:gravity="center"
                 android:text="3"
-                android:textColor="#FFCFCFCF" />
+                android:textColor="#FFCFCFCF"
+                android:textSize="18sp" />
 
             <RadioButton
                 android:id="@+id/rbtn_fatigueLevel4"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
+                android:background="@drawable/radio_button_selector"
+                android:backgroundTint="#b74527"
+                android:button="@null"
+                android:gravity="center"
                 android:text="4"
-                android:textColor="#FFCFCFCF" />
+                android:textColor="#FFCFCFCF"
+                android:textSize="18sp" />
 
             <RadioButton
                 android:id="@+id/rbtn_fatigueLevel5"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_margin="4dp"
                 android:layout_weight="1"
+                android:background="@drawable/radio_button_selector"
+                android:backgroundTint="#ce0505"
+                android:button="@null"
+                android:gravity="center"
                 android:text="5"
-                android:textColor="#FFCFCFCF" />
+                android:textColor="#FFCFCFCF"
+                android:textSize="18sp" />
         </RadioGroup>
-    </LinearLayout>
-
-    <!-- Headache/Exertion Layout Group - positioned at 35-53% of screen height -->
-    <LinearLayout
-        android:id="@+id/HeadacheLayoutGroup"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#FF225271"
-        android:orientation="vertical"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/guideline_53"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline_35">
-
-        <TextView
-            android:id="@+id/headacheTitle"
+        <!-- Linear layout for symptom severity description -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Estimated Exertion"
-            android:textAlignment="center"
-            android:textColor="#FFCFCFCF"
-            android:textSize="20sp" />
-
-        <RadioGroup
-            android:id="@+id/headacheRadioGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layoutDirection="inherit"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
             android:orientation="horizontal">
 
-            <RadioButton
-                android:id="@+id/rbtn_headacheLevel0"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/textView_None"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="0"
-                android:textColor="#FFCFCFCF" />
+                android:text="None"
+                android:textAlignment="viewStart"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
 
-            <RadioButton
-                android:id="@+id/rbtn_headacheLevel1"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/textView_Severe"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="1"
-                android:textColor="#FFCFCFCF" />
-
-            <RadioButton
-                android:id="@+id/rbtn_headacheLevel2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="2"
-                android:textColor="#FFCFCFCF" />
-
-            <RadioButton
-                android:id="@+id/rbtn_headacheLevel3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="3"
-                android:textColor="#FFCFCFCF" />
-
-            <RadioButton
-                android:id="@+id/rbtn_headacheLevel4"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="4"
-                android:textColor="#FFCFCFCF" />
-
-            <RadioButton
-                android:id="@+id/rbtn_headacheLevel5"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="5"
-                android:textColor="#FFCFCFCF" />
-        </RadioGroup>
+                android:text="Severe"
+                android:textAlignment="textEnd"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -288,15 +313,19 @@
         android:id="@+id/prediction_text"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#FF225271"
+        android:background="@drawable/panel_element"
+        android:backgroundTint="#061e42"
         android:gravity="center"
         android:text="Todays prediction:"
         android:textAlignment="center"
         android:textColor="#CFCFCF"
         android:textSize="20sp"
+
         app:layout_constraintBottom_toTopOf="@+id/guideline_76"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/guideline_58" />
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toTopOf="@+id/guideline_35"
+        app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

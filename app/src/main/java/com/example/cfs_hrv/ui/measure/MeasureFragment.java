@@ -33,6 +33,7 @@ import com.example.cfs_hrv.FatigueLevelPredictor;
 import com.example.cfs_hrv.HRVDataManager;
 import com.example.cfs_hrv.HRVMeasurementSystem;
 import com.example.cfs_hrv.ImageProcessing;
+import com.example.cfs_hrv.MessageDisplayManager;
 import com.example.cfs_hrv.R;
 import com.example.cfs_hrv.databinding.FragmentHomeBinding;
 import com.github.mikephil.charting.charts.LineChart;
@@ -84,6 +85,8 @@ public class MeasureFragment extends Fragment {
 
     boolean isTorchOn = false;
 
+    private MessageDisplayManager messageManager;
+
     //Sampling stuff
     private static final long SAMPLE_INTERVAL_MS = (long) 33.33333333; // Process frames every 100ms
 
@@ -116,7 +119,8 @@ public class MeasureFragment extends Fragment {
         heartRateTextView = binding.heartRateText;
 
         //HRVDataManager hrvManager = new HRVDataManager(getContext());
-
+        messageManager = new MessageDisplayManager(heartRateTextView);
+        messageManager.startStage(1);
         cameraExecutor = Executors.newSingleThreadExecutor();
         // Request camera permissions
         if (allPermissionsGranted()) {
@@ -142,6 +146,7 @@ public class MeasureFragment extends Fragment {
                         measureButton.setText("Get a Good Signal\nTap to Record");
                     }
                 });
+                messageManager.startStage(2);
                 //startCamera();
                 sampleButtonState = 1;
                 setTorch(true);   //Enable our torch
@@ -149,6 +154,7 @@ public class MeasureFragment extends Fragment {
             case 1:
                 doingDataSample = true;
                 sample_startTime = System.currentTimeMillis();
+                messageManager.startStage(3);
                 getActivity().runOnUiThread(new Runnable() {
                     public void run(){
                         measureButton.setText("Doing Data Sample\nTap to Finish");

@@ -169,7 +169,7 @@ public class MeasureFragment extends Fragment {
                     }
                 });
                 doingDataSample = false;
-
+                messageManager.release();  //So our message doesn't override the data display that should replace it
                 //sample_stopTime = System.currentTimeMillis();
                 HRVMeasurementSystem.HRVMetrics results =
                         HRVMeasurementSystem.analyzeHRV(dataPointList, 30);

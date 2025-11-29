@@ -89,6 +89,11 @@ public class MessageDisplayManager {
         });
     }
 
+    public void release() {
+        handler.removeCallbacksAndMessages(null);
+        messageTextView.setAlpha(1f);
+    }
+
     // Show the next message in the sequence
     private void showNextMessage() {
         if (currentMessageIndex >= currentStageMessages.size()) {

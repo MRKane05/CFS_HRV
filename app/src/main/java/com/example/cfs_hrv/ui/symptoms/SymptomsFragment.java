@@ -249,7 +249,7 @@ public class SymptomsFragment extends Fragment {
         predictionString += "RMSSD: " +  String.format("%.2f",dataEntry.getRmssd()) + "\n";
         predictionString += "Heart Rate: " +  String.format("%.1f",dataEntry.getHeartRate()) + "\n";
         predictionString += "Valid Beats: " + dataEntry.getValidBeats() + "\n";
-        predictionString += "HRV Score: " +  String.format("%.5f", FatigueLevelPredictor.getDailyScore(historicHRV, dataEntry)) + "\n";
+        //predictionString += "HRV Score: " +  String.format("%.5f", FatigueLevelPredictor.getDailyScore(historicHRV, dataEntry)) + "\n";
 /*
         predictionString += "\n\n";
         predictionString += "SDNN Dev: " + deviation.sdnnDeviation + "\n";

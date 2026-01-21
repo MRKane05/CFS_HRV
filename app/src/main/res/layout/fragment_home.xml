@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Platform.MaterialComponents.Light"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.measure.MeasureFragment">
@@ -118,7 +119,9 @@
         android:indeterminateDrawable="@android:drawable/progress_horizontal"
         android:max="100"
         android:progress="0"
+        android:progressBackgroundTint="#172F49"
         android:progressDrawable="@android:drawable/progress_horizontal"
+        android:progressTint="#384A75"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toTopOf="@id/guideline_55" />
@@ -137,10 +140,13 @@
     <!-- Measure button - positioned from 78% to ~88% of screen height -->
     <Button
         android:id="@+id/measure_button"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:backgroundTint="#384A75"
         android:elegantTextHeight="false"
         android:text="Tap to Begin"
+        android:textColor="#FFCFCFCF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintHeight_percent="0.2"

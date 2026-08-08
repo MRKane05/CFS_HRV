@@ -28,6 +28,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.cfs_hrv.FatigueLevelPredictor;
 import com.example.cfs_hrv.HRVDataManager;
@@ -155,6 +157,7 @@ public class MeasureFragment extends Fragment {
                 doingDataSample = true;
                 sample_startTime = System.currentTimeMillis();
                 messageManager.startStage(3);
+                dataPointList.clear();
                 getActivity().runOnUiThread(new Runnable() {
                     public void run(){
                         measureButton.setText("Doing Data Sample\nTap to Finish");
@@ -182,15 +185,23 @@ public class MeasureFragment extends Fragment {
                 hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
                         results.heartRate, results.validBeats);
 
-                getActivity().runOnUiThread(new Runnable() {
-                    public void run() {
-                        heartRateTextView.setText(results.toString());
-                    }
-                });
+
                 //exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
                 setTorch(false);   //Disable our torch
 
                 sampleButtonState = 0;  //Reset back to start
+
+                getActivity().runOnUiThread(new Runnable() {
+                    public void run() {
+                        heartRateTextView.setText(results.toString());
+                        // This will trigger the navigation through your bottom nav menu
+                        getActivity().findViewById(R.id.navigation_symptoms).performClick();
+                        //NavController navController = NavHostFragment.findNavController(MeasureFragment.this);
+                        //navController.navigate(R.id.action_navigation_measure_to_navigation_symptoms);
+                    }
+                });
+
+
                 break;
         }
 

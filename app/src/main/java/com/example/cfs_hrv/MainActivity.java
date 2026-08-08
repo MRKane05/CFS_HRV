@@ -198,9 +198,9 @@ public class MainActivity extends AppCompatActivity {
                     selected_fragment = new MeasureFragment();
                 } else if (id == R.id.navigation_symptoms) {
                     selected_fragment = new SymptomsFragment(); //Dashboard is Symptoms
-                } else if (id == R.id.navigation_results) {
-                    selected_fragment = new ResultsFragment();  //Notifications are results
-                }
+                }// else if (id == R.id.navigation_results) {
+                   // selected_fragment = new ResultsFragment();  //Notifications are results
+                //}
 
                 if (selected_fragment !=null) {
                     getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selected_fragment).commit();

@@ -11,9 +11,5 @@
         android:icon="@drawable/ic_dashboard_black_24dp"
         android:title="Symptoms" />
 
-    <item
-        android:id="@+id/navigation_results"
-        android:icon="@drawable/ic_notifications_black_24dp"
-        android:title="Results" />
 
 </menu>

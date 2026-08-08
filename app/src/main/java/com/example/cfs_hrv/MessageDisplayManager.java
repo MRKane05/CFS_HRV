@@ -21,16 +21,17 @@ public class MessageDisplayManager {
     private List<String> stage1Messages = Arrays.asList(
             "Welcome. It's best to record data before you even get out of bed",
             "Get comfortable and press button to begin",
-            "Try to be positioned so that you can breathe easily",
+            "Try to be positioned so that you can breathe easily and don't need to shuffle",
             "Moving while taking a recording can cause noise in the data"
     );
 
     private List<String> stage2Messages = Arrays.asList(
-            "Get settled and comfortable",
+            "Place your finger over the LED and camera to start reading your heartrate",
             "Try to get a saw-tooth pattern before starting the record",
             "Wait until graph stabilizes before starting a record",
             "Try repositioning your finger if the camera view isn't red",
             "Try varying degrees of pressure on the screen to get a stable result",
+            "It's easier to get a good measure if your fingers are warm",
             "At worst try a different position/hand for doing a measure",
             "Depending on the light levels around your phone it can be difficult to get a good measure",
             "If you cannot get a good measure happening try moving/stretching your hand to promote blood flow"
@@ -38,11 +39,12 @@ public class MessageDisplayManager {
 
     private List<String> stage3Messages = Arrays.asList(
             "Recording your Heart Rate data",
-            "Breathe normally, keep still, even yawning can add noise to the recording",
+            "Breathe normally, keep still, even yawning can add noise to your recording",
             "The progress bar is set to record 2 minutes of data in order to get a more accurate measure",
             "The more good data you can get the better your data will be for predictions",
             "This approach is based off of studies linking heart rate variability to fatigue levels",
             "If the data you record now seems out of character you can simply repeat the measure",
+            "It's not unusual for data to have sudden dips or spikes, and the system accounts for these",
             "Measures can be done, or re-done at any stage of the day, but you must make sure your symptoms are correctly updated",
             "According to published studies your HRV will stabilize as the day goes on",
             "It does feel like a long time but try to relax and stick with it",

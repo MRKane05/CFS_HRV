@@ -1,4 +1,4 @@
-package com.example.cfs_hrv.ui.results;
+package com.vitahot.ms_battery_nz.ui.results;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -20,7 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.cfs_hrv.databinding.FragmentNotificationsBinding;
+import com.vitahot.ms_battery_nz.databinding.FragmentNotificationsBinding;
 
 public class ResultsFragment extends Fragment {
     private static final String FILENAME = "hrv_data.json";

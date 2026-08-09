@@ -1,4 +1,4 @@
-package com.example.cfs_hrv.ui.symptoms;
+package com.vitahot.ms_battery_nz.ui.symptoms;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

@@ -1,4 +1,4 @@
-package com.example.cfs_hrv.ui.measure;
+package com.vitahot.ms_battery_nz.ui.measure;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

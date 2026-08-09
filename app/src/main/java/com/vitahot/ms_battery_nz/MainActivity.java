@@ -1,4 +1,4 @@
-package com.example.cfs_hrv;
+package com.vitahot.ms_battery_nz;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
@@ -11,6 +11,7 @@ import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -24,16 +25,17 @@ import android.graphics.YuvImage;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
-import com.example.cfs_hrv.ui.measure.MeasureFragment;
-import com.example.cfs_hrv.ui.results.ResultsFragment;
-import com.example.cfs_hrv.ui.symptoms.SymptomsFragment;
+import com.vitahot.ms_battery_nz.ui.measure.MeasureFragment;
+import com.vitahot.ms_battery_nz.ui.symptoms.SymptomsFragment;
 import com.github.mikephil.charting.components.LimitLine;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.math.MathUtils;
@@ -60,6 +62,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 
 //Data type for peak points
@@ -92,13 +95,14 @@ class HRVResult {
     }
 }
 
-public class MainActivity extends AppCompatActivity {
+//public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MeasureFragment.MeasureListener {
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     public static final String[] REQUIRED_PERMISSIONS = new String[]{Manifest.permission.CAMERA};
     private static final String TAG = "CameraTorch";
 
     //Config for sample window
-    private long sample_startTime = 0;
+    public long sample_startTime = 0;
     private long sample_stopTime = 0;
 
     // Sampling configuration
@@ -107,13 +111,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int SAMPLE_WIDTH = 10; // Sample width for grid
     private static final int SAMPLE_HEIGHT = 10; // Sample height for grid
 
-    private TextView progress_text;
-    private PreviewView previewView;
+    //private TextView progress_text;
+    public PreviewView previewView;
     private Button torchButton;
     private TextView pixelDataView;
-    private Camera camera;
+    public Camera camera;
     private ExecutorService cameraExecutor;
-    private Handler mainHandler;
+    public Handler mainHandler;
     private boolean isTorchOn = false;
     private int frameCount = 0;
 
@@ -122,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
     private long lastProcessedTime = 0;
 
     //Graph fields
-    private LineChart redColorChart;
+    public LineChart redColorChart;
     private List<Entry> redColorEntries = new ArrayList<>();
     private static final int MAX_DATA_POINTS = 50; // Maximum number of data points to show
     private int dataPointCount = 0;
@@ -141,7 +145,8 @@ public class MainActivity extends AppCompatActivity {
     private float[] recentValues = new float[PEAK_DETECTION_WINDOW];
     private int valueIndex = 0;
     private long lastPeakTime = 0;
-    private TextView heartRateTextView;
+    public TextView heartRateTextView;
+    public ProgressBar progressBar;
 
     //Hand written function to look for peaks by judging drop-offs in data
     private static float PEAK_MIN_DROPOFF_VALUE = 1.5f; //How much we expect the red value to drop by (at least) after a peak
@@ -178,7 +183,12 @@ public class MainActivity extends AppCompatActivity {
 
     private float MIN_HEART_PAUSE = 500f; //Anything below this value will be thrown out (120bpm)
 
+    public boolean isCameraReady = false;
     BottomNavigationView bottomNavigationView;
+
+    protected Long MEASURE_TIME_DURATION = 120000L; //2 minutes
+
+    public Preview preview;  // Add this as a class variable
 
     Long start_Time;
     @Override
@@ -186,45 +196,69 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        bottomNavigationView = findViewById(R.id.bottom_nav);
-        bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
-            //@Override
+        try {
+            // Initialize handlers and executors (needed for camera)
+            mainHandler = new Handler(Looper.getMainLooper());
+            cameraExecutor = Executors.newSingleThreadExecutor();
 
-            Fragment selected_fragment = null;
+            // Setup bottom navigation
+            bottomNavigationView = findViewById(R.id.bottom_nav);
+            bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
+                Fragment selected_fragment = null;
 
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                int id = menuItem.getItemId();
-                if (id == R.id.navigation_measure) {
-                    selected_fragment = new MeasureFragment();
-                } else if (id == R.id.navigation_symptoms) {
-                    selected_fragment = new SymptomsFragment(); //Dashboard is Symptoms
-                }// else if (id == R.id.navigation_results) {
-                   // selected_fragment = new ResultsFragment();  //Notifications are results
-                //}
+                public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                    int id = menuItem.getItemId();
+                    if (id == R.id.navigation_measure) {
+                        selected_fragment = new MeasureFragment();
+                    } else if (id == R.id.navigation_symptoms) {
+                        selected_fragment = new SymptomsFragment();
+                    }
 
-                if (selected_fragment !=null) {
-                    getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selected_fragment).commit();
+                    if (selected_fragment != null) {
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragment_container, selected_fragment)
+                                .commit();
+                    }
+                    return true;
                 }
-                return true;
+            });
+
+            // Initialize first fragment if this is a fresh start
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new MeasureFragment())
+                        .commit();
             }
-        });
 
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new MeasureFragment()).commit();
+            // Start measuring time for sampling window
+            start_Time = System.currentTimeMillis();
+
+            // Request camera permissions
+            // Request camera permissions
+            if (allPermissionsGranted()) {
+                // Delay slightly to let activity fully initialize
+                mainHandler.postDelayed(() -> startCamera(), 500);
+            } else {
+                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error in onCreate: " + e.getMessage(), e);
+            Toast.makeText(this, "Error initializing app", Toast.LENGTH_SHORT).show();
         }
-
-        start_Time = System.currentTimeMillis();
+    }
+    public void onDataRecordButtonPressed() {
+        dataRecordButton();
     }
 
-    private void setupChart() {
+    public void setupChart() {
         // Chart styling
         redColorChart.setDrawGridBackground(false);
         redColorChart.setDrawBorders(true);
         redColorChart.setAutoScaleMinMaxEnabled(true);
-        redColorChart.setTouchEnabled(true);
-        redColorChart.setDragEnabled(true);
-        redColorChart.setScaleEnabled(true);
-        redColorChart.setPinchZoom(true);
+        redColorChart.setTouchEnabled(false);
+        redColorChart.setDragEnabled(false);
+        redColorChart.setScaleEnabled(false);
+        redColorChart.setPinchZoom(false);
 
         // Chart description
         Description description = new Description();
@@ -272,16 +306,44 @@ public class MainActivity extends AppCompatActivity {
         if (redColorEntries.size() > MAX_DATA_POINTS) {
             redColorEntries.remove(0);
         }
+        //Log.d("UpdateChart", "updateRedColorChart called, doingDataSample=" + doingDataSample);
 
         // Update chart on UI thread
         mainHandler.post(() -> {
+            if (doingDataSample && sample_startTime > 0) {
+                long elapsedTime = System.currentTimeMillis() - sample_startTime;
+                int completePercentage = (int) ((elapsedTime * 100) / MEASURE_TIME_DURATION);
+                if (completePercentage > 100) completePercentage = 100;
+                //Log.d("ProgressBar", "Is null? " + (progressBar == null) + " | Current progress: " + completePercentage);
+                if (progressBar != null) {
+                    progressBar.setProgress(completePercentage);
+                }
+                //our code to call the next page when the line is complete
+                if (completePercentage >= 100 && doingDataSample) {
+                    // Get the fragment and call dataRecordButton
+                    Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                    if (fragment instanceof MeasureFragment) {
+                        ((MeasureFragment) fragment).dataRecordButton();
+                    }
+                }
+
+            }
+
             LineDataSet dataSet;
 
+            if (redColorChart.getData() != null && redColorChart.getData().getDataSetCount() > 0) {
+                dataSet = (LineDataSet) redColorChart.getData().getDataSetByIndex(0);
+                dataSet.setValues(new ArrayList<>(redColorEntries));
+                redColorChart.getData().notifyDataChanged();
+                redColorChart.notifyDataSetChanged();
+                handleGraphZooming(avgRed);
+            }
+/*
             if (redColorChart.getData() != null &&
                     redColorChart.getData().getDataSetCount() > 0) {
                 // Update existing dataset
                 dataSet = (LineDataSet) redColorChart.getData().getDataSetByIndex(0);
-                dataSet.setValues(redColorEntries);
+                dataSet.setValues(new ArrayList<>(redColorEntries));  // Copy the list
                 redColorChart.getData().notifyDataChanged();
                 redColorChart.notifyDataSetChanged();
             } else {
@@ -297,6 +359,8 @@ public class MainActivity extends AppCompatActivity {
                 redColorChart.setData(data);
             }
 
+ */
+
             redColorChart.invalidate();
         });
     }
@@ -307,13 +371,16 @@ public class MainActivity extends AppCompatActivity {
 
         cameraProviderFuture.addListener(() -> {
             try {
-                // Used to bind the lifecycle of cameras to the lifecycle owner
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
 
                 // Preview
-                Preview preview = new Preview.Builder().build();
+                preview = new Preview.Builder().build();
                 if (previewView != null) {
                     preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                    // Preview - now a member variable
+                    if (previewView != null) {
+                        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+                    }
                 }
 
                 // Image analysis use case
@@ -326,11 +393,12 @@ public class MainActivity extends AppCompatActivity {
                     public void analyze(@NonNull ImageProxy imageProxy) {
                         long currentTime = System.currentTimeMillis();
                         long start_delay = currentTime - start_Time;
+
                         // Only process frames at specified interval to maintain performance
-                        if (currentTime - lastProcessedTime >= SAMPLE_INTERVAL_MS && start_delay > 500L) {// && currentTime > start_Time + START_SAMPLING_DELAY) {
-                        //if (start_delay > 500L) {   //Unthrottled data gathering
-                            //processImage(imageProxy);
-                            processImageFromYPlane(imageProxy);
+                        if (currentTime - lastProcessedTime >= SAMPLE_INTERVAL_MS && start_delay > 500L) {
+                            if (isCameraReady) {
+                                processImageFromYPlane(imageProxy);
+                            }
                             lastProcessedTime = currentTime;
                         }
                         imageProxy.close(); // Important: must close the imageProxy
@@ -349,20 +417,15 @@ public class MainActivity extends AppCompatActivity {
                 camera = cameraProvider.bindToLifecycle(
                         this, cameraSelector, preview, imageAnalysis);
 
-                // Update torch button state based on flashlight availability
-                torchButton.setEnabled(camera.getCameraInfo().hasFlashUnit());
-                if (camera.getCameraInfo().hasFlashUnit()) {
-                    //toggleTorch(); //Turn the torch on to begin with
-                    if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
-                        isTorchOn = !isTorchOn;
-                        camera.getCameraControl().enableTorch(isTorchOn);
-                        //torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
-                    }
-                }
+                Log.d(TAG, "Camera started successfully");
+
+                // SIGNAL THAT CAMERA IS READY - set this AFTER binding
+                isCameraReady = true;
 
             } catch (ExecutionException | InterruptedException e) {
                 Toast.makeText(this, "Error starting camera: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
+                isCameraReady = false;
             }
         }, ContextCompat.getMainExecutor(this));
     }
@@ -387,7 +450,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     int recordingStartIndex = 0;
-    boolean doingDataSample = false;
+    public boolean doingDataSample = false;
 
     public void dataRecordButton() {
         //Setup a user controlled sample window for ease of function
@@ -395,15 +458,17 @@ public class MainActivity extends AppCompatActivity {
             recordingStartIndex =  dataPointCount;
             doingDataSample = true;
             sample_startTime = System.currentTimeMillis();
-            torchButton.setText("Doing Data Sample");
+            //torchButton.setText("Doing Data Sample");
         } else {
-            torchButton.setText("Doing Data Analysis");
+            //torchButton.setText("Doing Data Analysis");
             doingDataSample = false;
             sample_stopTime = System.currentTimeMillis();
             HRVMeasurementSystem.HRVMetrics results =
                     HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
 
-            heartRateTextView.setText(results.toString());
+            if (heartRateTextView != null) {
+                heartRateTextView.setText(results.toString());
+            }
             exportPeakPointsToCSV(this, HRVMeasurementSystem.troughs, "ClaudeHeartPeaks.txt");
             camera.getCameraControl().enableTorch(false);   //Disable our torch
             //peaks
@@ -415,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
         if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
             isTorchOn = !isTorchOn;
             camera.getCameraControl().enableTorch(isTorchOn);
-            torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
+            //torchButton.setText(isTorchOn ? "Turn Off Torch" : "Turn On Torch");
         }
     }
 
@@ -450,7 +515,8 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
-                startCamera();
+                // Delay to let activity resume properly after permission dialog
+                mainHandler.postDelayed(() -> startCamera(), 500);
             } else {
                 Toast.makeText(this, "Permissions not granted by the user.",
                         Toast.LENGTH_SHORT).show();
@@ -507,6 +573,7 @@ public class MainActivity extends AppCompatActivity {
     public List<HRVMeasurementSystem.DataPoint> dataPointList = new ArrayList<>();
 
     private float processImageFromYPlane(ImageProxy imageProxy) {
+
         @OptIn(markerClass = ExperimentalGetImage.class) Image image = imageProxy.getImage();
         if (image == null) {
             return 0;
@@ -551,11 +618,9 @@ public class MainActivity extends AppCompatActivity {
                 dataPointList.add(newDataPoint);
             }
 
-
-
             //detectPeaks(pixel_R);
-            detectPeaks((float)averageLuminance);
-            detectTroughs((float)averageLuminance);
+            //detectPeaks((float)averageLuminance);
+            //detectTroughs((float)averageLuminance);
 
             //Log.d("LUMINANCE", "Average Y value: " + averageLuminance);
 
@@ -621,6 +686,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private int lastPeakPoint = 0;
+
+    private void handleGraphZooming(float currentRedValue) {
+        //Handle the zooming in of our graph
+        frame_stable_max = Math.max(frame_stable_max, currentRedValue);
+        frame_stable_max = MathUtils.lerp(frame_stable_max, currentRedValue, FRAME_STABLE_LERP_SPEED/100);
+
+        frame_stable_min = Math.min(frame_stable_min, currentRedValue);
+        frame_stable_min = MathUtils.lerp(frame_stable_min, currentRedValue, FRAME_STABLE_LERP_SPEED/100);
+
+        YAxis leftAxis = redColorChart.getAxisLeft();
+        leftAxis.setAxisMinimum(frame_stable_min-2);  //0
+        leftAxis.setAxisMaximum(frame_stable_max+2);  //255
+        //Zooming function complete :)
+    }
+
     private void detectPeaks(float currentRedValue) {
         long currentTime = System.currentTimeMillis();
         boolean isPeak = false;
@@ -835,7 +915,7 @@ public class MainActivity extends AppCompatActivity {
                 int barFill = (int)(measureProgress * 100f);
                 if (barFill > 100) { barFill = 100; }
                 
-                progress_text.setText("Progress: " + barFill + "%");
+                //progress_text.setText("Progress: " + barFill + "%");
             }
 
             troughsTimestamps.add(currentTime);

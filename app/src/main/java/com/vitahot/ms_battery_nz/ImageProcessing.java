@@ -1,4 +1,4 @@
-package com.example.cfs_hrv;
+package com.vitahot.ms_battery_nz;
 
 import android.media.Image;
 import android.util.Log;

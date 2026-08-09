@@ -1,4 +1,4 @@
-package com.example.cfs_hrv;
+package com.vitahot.ms_battery_nz;
 import java.util.ArrayList;
 import java.util.List;
 

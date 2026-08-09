@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/navigation_measure"
-        android:name="com.example.cfs_hrv.ui.measure.MeasureFragment"
+        android:name="com.vitahot.ms_battery_nz.ui.measure.MeasureFragment"
         android:label="@string/title_home"
         tools:layout="@layout/fragment_home">
         <action
@@ -17,7 +17,7 @@
 
     <fragment
         android:id="@+id/navigation_symptoms"
-        android:name="com.example.cfs_hrv.ui.symptoms.SymptomsFragment"
+        android:name="com.vitahot.ms_battery_nz.ui.symptoms.SymptomsFragment"
         android:label="@string/title_dashboard"
         tools:layout="@layout/fragment_dashboard" />
 

@@ -1,4 +1,4 @@
-package com.example.cfs_hrv;
+package com.vitahot.ms_battery_nz;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

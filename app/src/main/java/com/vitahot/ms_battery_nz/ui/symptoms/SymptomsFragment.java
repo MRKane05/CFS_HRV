@@ -1,4 +1,4 @@
-package com.example.cfs_hrv.ui.symptoms;
+package com.vitahot.ms_battery_nz.ui.symptoms;
 
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
@@ -20,17 +20,15 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.cfs_hrv.FatigueLevelPredictor;
-import com.example.cfs_hrv.ForestDataPoint;
-import com.example.cfs_hrv.HRVBaselineAnalyzer;
-import com.example.cfs_hrv.HRVData;
-import com.example.cfs_hrv.HRVDataManager;
-import com.example.cfs_hrv.databinding.FragmentDashboardBinding;
+import com.vitahot.ms_battery_nz.FatigueLevelPredictor;
+import com.vitahot.ms_battery_nz.ForestDataPoint;
+import com.vitahot.ms_battery_nz.HRVBaselineAnalyzer;
+import com.vitahot.ms_battery_nz.HRVData;
+import com.vitahot.ms_battery_nz.HRVDataManager;
+import com.vitahot.ms_battery_nz.databinding.FragmentDashboardBinding;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 
 public class SymptomsFragment extends Fragment {

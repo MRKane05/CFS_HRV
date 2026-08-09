@@ -1,4 +1,4 @@
-package com.example.cfs_hrv;
+package com.vitahot.ms_battery_nz;
 
 // Data point class to hold your HRV data and fatigue target
 public class ForestDataPoint {

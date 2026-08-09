@@ -48,7 +48,9 @@ public class MessageDisplayManager {
             "Measures can be done, or re-done at any stage of the day, but you must make sure your symptoms are correctly updated",
             "According to published studies your HRV will stabilize as the day goes on",
             "It does feel like a long time but try to relax and stick with it",
-            "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect"
+            "Measuring HRV through a phone will be significantly noisier than a proper medical device, and this is only as an indication",
+            "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect",
+            "You can go back through your days on the symptoms screen and change your fatigue levels"
     );
 
     // Constructor

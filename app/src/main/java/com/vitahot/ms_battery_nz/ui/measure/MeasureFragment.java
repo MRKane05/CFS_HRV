@@ -229,7 +229,9 @@ public class MeasureFragment extends Fragment {
                 if (messageManager != null) {
                     messageManager.startStage(3);
                 }
-                dataPointList.clear();
+                //MainActivity mainActivity = (MainActivity) getActivity();
+
+                mainActivity.dataPointList.clear();
                 if (measureButton != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         public void run(){
@@ -257,12 +259,15 @@ public class MeasureFragment extends Fragment {
                     messageManager.release();
                 }
 
+                //MainActivity mainActivity = (MainActivity) getActivity();
                 HRVMeasurementSystem.HRVMetrics results =
-                        HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
-
+                        HRVMeasurementSystem.analyzeHRV(mainActivity.dataPointList, 30);
+                /*
                 HRVDataManager hrvManager = new HRVDataManager(getContext());
                 hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
-                        results.heartRate, results.validBeats);
+                        results.heartRate, results.validBeats);*/
+
+                saveResultsToDatabase();
 
                 setTorch(false);
                 sampleButtonState = 0;
@@ -280,6 +285,21 @@ public class MeasureFragment extends Fragment {
                 break;
         }
     }
+
+    public  void saveResultsToDatabase() {
+        MainActivity mainActivity = (MainActivity) getActivity();
+        HRVMeasurementSystem.HRVMetrics results =
+                HRVMeasurementSystem.analyzeHRV(mainActivity.dataPointList, 30);
+
+        HRVDataManager hrvManager = new HRVDataManager(getContext());
+        hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
+                results.heartRate, results.validBeats);
+
+        if (heartRateTextView != null) {
+            heartRateTextView.setText(results.toString());
+        }
+    }
+
     private void setupChart() {
         redColorChart.setDrawGridBackground(false);
         redColorChart.setDrawBorders(false);

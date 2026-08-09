@@ -185,18 +185,28 @@ public class SymptomsFragment extends Fragment {
         List<ForestDataPoint> historicalData = new ArrayList<>();
         List<HRVData> allHRVData = hrvData.getAllData();
 
+        String predictionString  = "";
+        HRVData dataEntry = hrvData.getOffsetData(dayOffset);// hrvData.getTodaysData();// allHRVData.get(allHRVData.size()-1);    //Todays entry
+        if (dataEntry == null) {
+            return "No data avaliable";
+        }
+
         if (allHRVData.size() < 3) {
-            return "Need to gather " + (3 - allHRVData.size()) + " more days worth of data\nto make a predication";
+            predictionString = "Need to gather " + (3 - allHRVData.size()) + " more days worth of data to make a predication\n";
+            predictionString += "RMSSD: " +  String.format("%.2f",dataEntry.getRmssd()) + "\n";
+            predictionString += "Heart Rate: " +  String.format("%.1f",dataEntry.getHeartRate()) + "\n";
+            predictionString += "Valid Beats: " + dataEntry.getValidBeats() + "\n";
+            return predictionString;
         }
 
         List<HRVData> historicHRV = new ArrayList<>();
         for (int i=0; i< allHRVData.size()-1; i++) {    //Grab all our data apart from todays entry for a test
             //double sdnn, double rmssd, double pnn50, double fatigueLevel
-            HRVData dataEntry = allHRVData.get(i);
-            ForestDataPoint newForestPoint = new ForestDataPoint(dataEntry.getSdnn(), dataEntry.getRmssd(),
-                    dataEntry.getPnn50(), dataEntry.getFatigueLevel());
+            HRVData hv_dataEntry = allHRVData.get(i);
+            ForestDataPoint newForestPoint = new ForestDataPoint(hv_dataEntry.getSdnn(), hv_dataEntry.getRmssd(),
+                    hv_dataEntry.getPnn50(), hv_dataEntry.getFatigueLevel());
             historicalData.add(newForestPoint);
-            historicHRV.add(dataEntry);
+            historicHRV.add(hv_dataEntry);
         }
 
         //RandomForest  fatigueModel = new RandomForest(30, 8, 3);
@@ -205,36 +215,7 @@ public class SymptomsFragment extends Fragment {
         HRVBaselineAnalyzer baselineAnalyzer = new HRVBaselineAnalyzer(historicalData.size());
         baselineAnalyzer.updateBaseline(historicalData);
 
-        HRVData dataEntry = hrvData.getOffsetData(dayOffset);// hrvData.getTodaysData();// allHRVData.get(allHRVData.size()-1);    //Todays entry
-        if (dataEntry == null) {
-            return "No data avaliable";
-        }
-        //(double sdnn, double rmssd, double pnn50) {
-        //fatiguePrediction = fatigueModel.predict(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
-
-        // 3. Percentile ranking
-        //double percentileRank = baselineAnalyzer.getPercentileRank(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
-
-        // 4. Risk assessment
-        //boolean highFatigueRisk = baselineAnalyzer.isHighFatigueRisk(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
-
-        //HRVBaselineAnalyzer.DeviationResult deviation = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
-
-        //HRVBaselineAnalyzer.DeviationResult riskLevel = baselineAnalyzer.analyzeDeviation(dataEntry.getSdnn(), dataEntry.getRmssd(), dataEntry.getPnn50());
-
-        //String reccomendation = getRecommendation(highFatigueRisk, percentileRank, riskLevel.riskLevel);
-
-        //textView.setText("Predicted Level: " + (float)predictedFatigueLevel);
-        /*
-        String predictionString = "Predicted Level: " + (float)fatiguePrediction;
-        predictionString += "\n";
-        predictionString += reccomendation;
-        predictionString += "\n\n";*/
-
-        //String predictionString = "Todays Fatigue Level: " + dataEntry.getFatigueLevel() + "\n";
-        //predictionString += "Todays Headache Level: " + dataEntry.getHeadacheLevel() + "\n";
-
-        String predictionString  = ""; //""HRV Score: " + FatigueLevelPredictor.getDailyScore(historicHRV, dataEntry) + "\n";
+         //""HRV Score: " + FatigueLevelPredictor.getDailyScore(historicHRV, dataEntry) + "\n";
         predictionString += "Predicted Level: " + FatigueLevelPredictor.predictFatigueLevelRange(historicHRV, dataEntry) + "\n";
 
         //predictionString += "Trend Prediction: " + FatigueLevelPredictor.predictFatigueLevelRangeWithTrend(historicHRV, dataEntry, 7) + "\n";
@@ -247,14 +228,7 @@ public class SymptomsFragment extends Fragment {
         predictionString += "RMSSD: " +  String.format("%.2f",dataEntry.getRmssd()) + "\n";
         predictionString += "Heart Rate: " +  String.format("%.1f",dataEntry.getHeartRate()) + "\n";
         predictionString += "Valid Beats: " + dataEntry.getValidBeats() + "\n";
-        //predictionString += "HRV Score: " +  String.format("%.5f", FatigueLevelPredictor.getDailyScore(historicHRV, dataEntry)) + "\n";
-/*
-        predictionString += "\n\n";
-        predictionString += "SDNN Dev: " + deviation.sdnnDeviation + "\n";
-        predictionString += "RMSS Dev: " + deviation.rmssdDeviation + "\n";
-        predictionString += "PNN50 Dev: " + deviation.pnn50Deviation + "\n";
-        predictionString += "Composite Dev: " + deviation.compositeDeviation + "\n";
-*/
+
         return predictionString;
     }
 

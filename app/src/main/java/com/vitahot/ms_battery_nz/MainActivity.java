@@ -297,10 +297,10 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
     private void updateRedColorChart(float avgRed) {
         // Calculate average red value from all sampled pixels
-
+        float graphValue = 255-avgRed;
         // Add new data point
         dataPointCount++;
-        redColorEntries.add(new Entry(dataPointCount, avgRed));
+        redColorEntries.add(new Entry(dataPointCount, graphValue));
 
         // Remove old data points if we exceed max
         if (redColorEntries.size() > MAX_DATA_POINTS) {
@@ -323,7 +323,9 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                     // Get the fragment and call dataRecordButton
                     Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                     if (fragment instanceof MeasureFragment) {
-                        ((MeasureFragment) fragment).dataRecordButton();
+                        MeasureFragment measureFragment = (MeasureFragment) fragment;
+                        measureFragment.saveResultsToDatabase();  // Call the new method
+                        measureFragment.dataRecordButton();  // This handles navigation
                     }
                 }
 
@@ -336,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 dataSet.setValues(new ArrayList<>(redColorEntries));
                 redColorChart.getData().notifyDataChanged();
                 redColorChart.notifyDataSetChanged();
-                handleGraphZooming(avgRed);
+                handleGraphZooming(graphValue);
             }
 /*
             if (redColorChart.getData() != null &&

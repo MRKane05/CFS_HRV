@@ -70,7 +70,8 @@ public class MessageDisplayManager {
             "After a varied set of data has been collected predictions can be fairly accurate",
             "You can shuttle back/forward through your daily records and set fatigue levels you feel to be incorrect",
             "It doesn't matter if you miss a day, or even a week, the system will handle this",
-            "Different devices can record wildly different RMSSD values - it's a flaw of using a phone camera"
+            "Different devices can record wildly different RMSSD values - it's a flaw of using a phone camera",
+            "All your data is stored locally at: Android\\data\\com.vitahot.ms_battery_nz\\files\\Documents\\hrv_data.json.\nNo cloud servers, no other agent, no company interests"
     );
 
     // Constructor

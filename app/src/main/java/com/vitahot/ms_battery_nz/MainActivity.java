@@ -284,7 +284,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
         // Initialize empty data
         LineDataSet dataSet = new LineDataSet(redColorEntries, "Red Color Value");
-        dataSet.setColor(Color.RED);
+        dataSet.setColor(Color.LTGRAY);
         dataSet.setDrawCircles(false);
         dataSet.setDrawValues(false);
         dataSet.setLineWidth(2f);

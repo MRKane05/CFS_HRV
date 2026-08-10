@@ -9,6 +9,13 @@
 
     <!-- Horizontal guidelines for percentage-based positioning -->
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_07"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.17" />
+
+    <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_10"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -20,21 +27,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.4" />
+        app:layout_constraintGuide_percent="0.44" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_55"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.45" />
+        app:layout_constraintGuide_percent="0.48" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_60"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.49" />
+        app:layout_constraintGuide_percent="0.46" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_78"
@@ -59,18 +66,11 @@
         app:layout_constraintGuide_percent="0.95" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_camera_left"
+        android:id="@+id/guideline_center_horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.25" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_camera_right"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.75" />
+        app:layout_constraintGuide_percent="0.5" />
 
     <!-- Background image - fills entire parent -->
     <ImageView
@@ -99,32 +99,45 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Camera preview - positioned using guidelines (10-30% of screen height) -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/preview_view"
+    <!-- Circular container for camera preview -->
+    <FrameLayout
+        android:id="@+id/preview_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="@drawable/circular_preview"
+        android:clipToOutline="true"
         app:layout_constraintBottom_toTopOf="@id/guideline_30"
-        app:layout_constraintEnd_toStartOf="@id/guideline_camera_right"
-        app:layout_constraintStart_toEndOf="@id/guideline_camera_left"
-        app:layout_constraintTop_toBottomOf="@id/guideline_10" />
-
-    <!-- Progress bar - positioned at 55% of screen height -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:indeterminate="false"
-        android:indeterminateDrawable="@android:drawable/progress_horizontal"
-        android:max="100"
-        android:progress="0"
-        android:progressBackgroundTint="#172F49"
-        android:progressDrawable="@android:drawable/progress_horizontal"
-        android:progressTint="#384A75"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintStart_toEndOf="@id/guideline_left"
-        app:layout_constraintTop_toTopOf="@id/guideline_55" />
+        app:layout_constraintTop_toBottomOf="@id/guideline_10">
+
+        <!-- Camera preview - circular, centered inside progress bar -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/preview_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+    <!-- Circular Progress Indicator - surrounds the preview -->
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:elevation="10dp"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0"
+        app:indicatorColor="#CCCCCC"
+        app:indicatorSize="150dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_60"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toTopOf="@+id/guideline_07"
+        app:trackColor="#384A75"
+        app:trackThickness="8dp" />
 
     <!-- Line chart - positioned between 60-78% of screen height -->
     <com.github.mikephil.charting.charts.LineChart
@@ -135,9 +148,9 @@
         app:layout_constraintBottom_toTopOf="@id/guideline_78"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintStart_toEndOf="@id/guideline_left"
-        app:layout_constraintTop_toBottomOf="@id/guideline_60" />
+        app:layout_constraintTop_toBottomOf="@id/guideline_55" />
 
-    <!-- Measure button - positioned from 78% to ~88% of screen height -->
+    <!-- Measure button - positioned from 78% to bottom -->
     <Button
         android:id="@+id/measure_button"
         style="@style/Widget.MaterialComponents.Button.TextButton"

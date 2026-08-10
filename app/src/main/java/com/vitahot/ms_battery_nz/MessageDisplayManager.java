@@ -15,7 +15,7 @@ public class MessageDisplayManager {
     private int currentMessageIndex = 0;
     private List<String> currentStageMessages;
     private long fadeDuration = 500; // Duration for fade in/out in milliseconds
-    private long displayDuration = 5000; // How long message stays visible
+    private long displayDuration = 6000; // How long message stays visible
 
     // Define messages for each stage
     private List<String> stage1Messages = Arrays.asList(
@@ -66,7 +66,7 @@ public class MessageDisplayManager {
             "You'll quickly get a feel for your range of RMSSD values",
             "The data you enter here will be used by the system to make predictions based off of your HRV",
             "As you collect more data you may find the prediction is fairly accurate and doesn't need to be set",
-            "If you make a new measure the fatigue entry might need changed to suit. The predicted level will be updated",
+            "The first measure of the day automatically sets the level data if a prediction is made, consecutive measures will need to be set manually",
             "After a varied set of data has been collected predictions can be fairly accurate",
             "You can shuttle back/forward through your daily records and set fatigue levels you feel to be incorrect",
             "It doesn't matter if you miss a day, or even a week, the system will handle this",

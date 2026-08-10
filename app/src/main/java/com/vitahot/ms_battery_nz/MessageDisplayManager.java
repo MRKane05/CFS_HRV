@@ -22,26 +22,28 @@ public class MessageDisplayManager {
             "Welcome. It's best to record data before you even get out of bed",
             "Get comfortable and press button to begin",
             "Try to be positioned so that you can breathe easily and don't need to shuffle",
-            "Moving while taking a recording can cause noise in the data"
+            "Moving while taking a recording can cause noise in the data",
+            "Different recording positions lying/seated/standing can tilt recorded data so try to be consistent"
     );
 
     private List<String> stage2Messages = Arrays.asList(
-            "Place your finger over the LED and camera to start reading your heartrate",
-            "Try to get a saw-tooth pattern before starting the record",
+            "Place your finger over the LED and camera to start reading your hearts data",
+            "Try to get a consistent saw-tooth pattern before starting the record",
             "Wait until graph stabilizes before starting a record",
             "Try repositioning your finger if the camera view isn't red",
             "Try varying degrees of pressure on the screen to get a stable result",
-            "It's easier to get a good measure if your fingers are warm",
-            "At worst try a different position/hand for doing a measure",
-            "Depending on the light levels around your phone it can be difficult to get a good measure",
-            "If you cannot get a good measure happening try moving/stretching your hand to promote blood flow"
+            "Warm fingers give better measures, you might even need to warm the camera by holding a finger against it for a bit",
+            "At worst try a different position/finger/hand for doing a measure",
+            "You can make another measurement if your numbers seem out of character with how you feel",
+            "A dark environment will give a better measure as surrounding light can affect measurement",
+            "If you cannot get a good measure happening try moving/stretching your hand/arm to promote blood flow"
     );
 
     private List<String> stage3Messages = Arrays.asList(
             "Recording your Heart Rate data",
             "Breathe normally, keep still, even yawning can add noise to your recording",
             "The progress bar is set to record 2 minutes of data in order to get a more accurate measure",
-            "The more good data you can get the better your data will be for predictions",
+            "The more good data you can get the better your data will be for predictions, but you don't need the full 2 min",
             "This approach is based off of studies linking heart rate variability to fatigue levels",
             "If the data you record now seems out of character you can simply repeat the measure",
             "It's not unusual for data to have sudden dips or spikes, and the system accounts for these",
@@ -57,15 +59,18 @@ public class MessageDisplayManager {
             "This is best set at the end of the day based off of how you feel",
             "Your fatigue level can be set at any time of the day, or when you remember",
             "Predictions can be used to ascertain how much energy you might have in your day",
+            "Use predicted fatigue levels to plan out your day, and how to best spend your spoons",
+            "The system will throw out noisy data, so the more heartbeats recorded the better the prediction",
             "RMSSD is the value that's mapped to fatigue levels for predictions",
             "RMSSD on a phone isn't medically accurate, but good enough for this function",
             "You'll quickly get a feel for your range of RMSSD values",
             "The data you enter here will be used by the system to make predictions based off of your HRV",
-            "As you collect more data you may find the prediction is fairly accurate and doesn't need reset",
-            "If you make a new measure the fatigue entry might need changed to suit",
+            "As you collect more data you may find the prediction is fairly accurate and doesn't need to be set",
+            "If you make a new measure the fatigue entry might need changed to suit. The predicted level will be updated",
             "After a varied set of data has been collected predictions can be fairly accurate",
-            "You can shuttle back through your daily records and set fatigue levels you feel to be incorrect",
-            "It doesn't matter if you miss a day, or even a week, the system will handle this"
+            "You can shuttle back/forward through your daily records and set fatigue levels you feel to be incorrect",
+            "It doesn't matter if you miss a day, or even a week, the system will handle this",
+            "Different devices can record wildly different RMSSD values - it's a flaw of using a phone camera"
     );
 
     // Constructor

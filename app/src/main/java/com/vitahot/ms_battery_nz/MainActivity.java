@@ -328,7 +328,8 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                         measureFragment.dataRecordButton();  // This handles navigation
                     }
                 }
-
+            } else {
+                progressBar.setProgress(0);
             }
 
             LineDataSet dataSet;
@@ -343,6 +344,12 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
             redColorChart.invalidate();
         });
+    }
+
+    public void stopMeasurement() {
+        progressBar.setProgress(0);
+        doingDataSample = false;
+        sample_startTime = 0;
     }
 
     private void startCamera() {

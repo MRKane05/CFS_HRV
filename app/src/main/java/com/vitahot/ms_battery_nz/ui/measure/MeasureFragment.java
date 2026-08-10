@@ -187,7 +187,7 @@ public class MeasureFragment extends Fragment {
 
             // Reset button state when returning
             sampleButtonState = 0;
-            doingDataSample = false;
+            mainActivity.stopMeasurement();
         }
     }
 
@@ -338,7 +338,7 @@ public class MeasureFragment extends Fragment {
 
         // Make sure to create initial dataset
         LineDataSet dataSet = new LineDataSet(new ArrayList<>(), "PPG Value");
-        dataSet.setColor(Color.RED);  // Change from LTGRAY to RED
+        dataSet.setColor(Color.LTGRAY);
         dataSet.setDrawCircles(false);
         //dataSet.setCircleRadius(0f);
         dataSet.setDrawCircleHole(false);

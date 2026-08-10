@@ -26,6 +26,7 @@ import com.vitahot.ms_battery_nz.HRVBaselineAnalyzer;
 import com.vitahot.ms_battery_nz.HRVData;
 import com.vitahot.ms_battery_nz.HRVDataManager;
 import com.vitahot.ms_battery_nz.databinding.FragmentDashboardBinding;
+import com.vitahot.ms_battery_nz.MessageDisplayManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +56,9 @@ public class SymptomsFragment extends Fragment {
 
     private RadioGroup fatigueGroup;//, headacheGroup;
 
+    private TextView guideTextView;
+    private MessageDisplayManager messageManager;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         SymptomsViewModel symptomsViewModel =
@@ -73,6 +77,10 @@ public class SymptomsFragment extends Fragment {
         btn_daybackward = binding.btnDayback;
         btn_dayforward = binding.btnDayforward;
         dayDisplayText = binding.txtDaytitle;
+        guideTextView = binding.symptomsAreaText;
+        messageManager = new MessageDisplayManager(guideTextView);
+        messageManager.startStage(4);
+
 
         fatigueGroup = binding.fatigueRadioGroup;
         //headacheGroup = binding.headacheRadioGroup;
@@ -104,6 +112,23 @@ public class SymptomsFragment extends Fragment {
         btn_dayforward.setOnClickListener(v -> GotoNextDay());
         btn_daybackward.setOnClickListener(v -> GotoPreviousDay());
         return root;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Just pause the message manager, don't unbind camera
+        if (messageManager != null) {
+            messageManager.stop();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (messageManager != null) {   //resume our messages for this screen
+            messageManager.startStage(4);
+        }
     }
 
     void GotoNextDay() {

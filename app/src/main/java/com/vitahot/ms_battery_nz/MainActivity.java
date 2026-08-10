@@ -340,28 +340,6 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 redColorChart.notifyDataSetChanged();
                 handleGraphZooming(graphValue);
             }
-/*
-            if (redColorChart.getData() != null &&
-                    redColorChart.getData().getDataSetCount() > 0) {
-                // Update existing dataset
-                dataSet = (LineDataSet) redColorChart.getData().getDataSetByIndex(0);
-                dataSet.setValues(new ArrayList<>(redColorEntries));  // Copy the list
-                redColorChart.getData().notifyDataChanged();
-                redColorChart.notifyDataSetChanged();
-            } else {
-                // Create new dataset
-                dataSet = new LineDataSet(redColorEntries, "Red Color Value");
-                dataSet.setColor(Color.RED);
-                dataSet.setDrawCircles(false);
-                dataSet.setDrawValues(false);
-                dataSet.setLineWidth(2f);
-                dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
-
-                LineData data = new LineData(dataSet);
-                redColorChart.setData(data);
-            }
-
- */
 
             redColorChart.invalidate();
         });

@@ -48,9 +48,24 @@ public class MessageDisplayManager {
             "Measures can be done, or re-done at any stage of the day, but you must make sure your symptoms are correctly updated",
             "According to published studies your HRV will stabilize as the day goes on",
             "It does feel like a long time but try to relax and stick with it",
-            "Measuring HRV through a phone will be significantly noisier than a proper medical device, and this is only as an indication",
-            "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect",
-            "You can go back through your days on the symptoms screen and change your fatigue levels"
+            "Measuring HRV through a phone will be significantly noisier than a proper medical device, this is just an indicative app",
+            "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect"
+    );
+
+    private List<String> stage4Messages = Arrays.asList(
+            "Select the level of fatigue you experienced today",
+            "This is best set at the end of the day based off of how you feel",
+            "Your fatigue level can be set at any time of the day, or when you remember",
+            "Predictions can be used to ascertain how much energy you might have in your day",
+            "RMSSD is the value that's mapped to fatigue levels for predictions",
+            "RMSSD on a phone isn't medically accurate, but good enough for this function",
+            "You'll quickly get a feel for your range of RMSSD values",
+            "The data you enter here will be used by the system to make predictions based off of your HRV",
+            "As you collect more data you may find the prediction is fairly accurate and doesn't need reset",
+            "If you make a new measure the fatigue entry might need changed to suit",
+            "After a varied set of data has been collected predictions can be fairly accurate",
+            "You can shuttle back through your daily records and set fatigue levels you feel to be incorrect",
+            "It doesn't matter if you miss a day, or even a week, the system will handle this"
     );
 
     // Constructor
@@ -71,6 +86,9 @@ public class MessageDisplayManager {
                 break;
             case 3:
                 currentStageMessages = stage3Messages;
+                break;
+            case 4:
+                currentStageMessages = stage4Messages;
                 break;
             default:
                 currentStageMessages = Arrays.asList();

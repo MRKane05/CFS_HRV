@@ -3,15 +3,24 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile =
+                file("C:\\Users\\kano\\AndroidStudioProjects\\CFS_HRV\\CFS_HRV_keystore.jks")
+            keyAlias = "key0"
+            storePassword = "Stanaway12"
+            keyPassword = "Stanaway12"
+        }
+    }
     namespace = "com.vitahot.ms_battery_nz"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.vitahot.ms_battery_nz"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,7 +49,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
-    implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
@@ -54,5 +62,5 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.code.gson:gson:2.14.0")
 }

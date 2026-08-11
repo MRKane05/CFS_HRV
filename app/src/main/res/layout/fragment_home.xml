@@ -5,6 +5,7 @@
     style="@style/Platform.MaterialComponents.Light"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".ui.measure.MeasureFragment">
 
     <!-- Horizontal guidelines for percentage-based positioning -->
@@ -13,14 +14,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.17" />
+        app:layout_constraintGuide_percent="0.2" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_10"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.19" />
+        app:layout_constraintGuide_percent="0.22" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_30"
@@ -89,6 +90,7 @@
         android:id="@+id/heart_rate_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:background="#80000000"
         android:padding="8dp"
         android:text="Information"
@@ -129,7 +131,7 @@
         android:indeterminate="false"
         android:max="100"
         android:progress="0"
-        app:indicatorColor="#CCCCCC"
+        app:indicatorColor="#8C8C8C"
         app:indicatorSize="150dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline_60"
         app:layout_constraintDimensionRatio="1:1"

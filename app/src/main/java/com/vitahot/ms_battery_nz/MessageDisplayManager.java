@@ -51,7 +51,8 @@ public class MessageDisplayManager {
             "According to published studies your HRV will stabilize as the day goes on",
             "It does feel like a long time but try to relax and stick with it",
             "Measuring HRV through a phone will be significantly noisier than a proper medical device, this is just an indicative app",
-            "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect"
+            "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect",
+            "Switching to the Symptoms screen while recording data will cancel the recording"
     );
 
     private List<String> stage4Messages = Arrays.asList(

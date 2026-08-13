@@ -323,34 +323,72 @@ public class HRVDataManager {
         return new File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), FILENAME);
     }
 
+    public boolean deleteAllData() {
+        File file = getSaveFile();
+
+        if (file != null && file.exists()) {
+            // File exists, attempt to delete it
+            boolean deleted = file.delete();
+            return deleted;
+        } else {
+            // File doesn't exist
+            return false;
+        }
+    }
+
+    private void saveAllData() {
+        File file = getSaveFile();
+
+        try (FileWriter writer = new FileWriter(file)) {
+            String jsonData = gson.toJson(allData);
+
+            // Encrypt if encryption is enabled
+            if (!EncryptionManager.USE_UNENCRYPTED) {
+                javax.crypto.SecretKey key = EncryptionManager.getOrCreateKey(context);
+                jsonData = EncryptionManager.encrypt(jsonData, key);
+            }
+
+            writer.write(jsonData);
+            Log.d(TAG, "Saved " + allData.size() + " total entries to " + FILENAME);
+        } catch (IOException e) {
+            Log.e(TAG, "Error saving data", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error encrypting data", e);
+        }
+    }
+
     private void loadAllData() {
-        File file = getSaveFile(); //new File(context.getFilesDir(), FILENAME);
-        //File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), FILENAME);
+        File file = getSaveFile();
 
         if (!file.exists()) {
             return;
         }
 
         try (FileReader reader = new FileReader(file)) {
+            StringBuilder json = new StringBuilder();
+            int ch;
+            while ((ch = reader.read()) != -1) {
+                json.append((char) ch);
+            }
+
+            String jsonData = json.toString();
+
+            // Decrypt if encryption is enabled
+            if (!EncryptionManager.USE_UNENCRYPTED && jsonData.startsWith("ENCRYPTED:")) {
+                javax.crypto.SecretKey key = EncryptionManager.getOrCreateKey(context);
+                jsonData = EncryptionManager.decrypt(jsonData, key);
+            }
+
             TypeToken<List<HRVData>> token = new TypeToken<List<HRVData>>() {};
-            List<HRVData> data = gson.fromJson(reader, token.getType());
+            List<HRVData> data = gson.fromJson(jsonData, token.getType());
             if (data != null) {
                 allData = data;
             }
             Log.d(TAG, "Loaded " + allData.size() + " total entries from " + FILENAME);
         } catch (IOException e) {
             Log.e(TAG, "Error loading data", e);
-        }
-    }
-
-    private void saveAllData() {
-        File file = getSaveFile(); //new File(context.getFilesDir(), FILENAME);
-
-        try (FileWriter writer = new FileWriter(file)) {
-            gson.toJson(allData, writer);
-            Log.d(TAG, "Saved " + allData.size() + " total entries to " + FILENAME);
-        } catch (IOException e) {
-            Log.e(TAG, "Error saving data", e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error decrypting data", e);
         }
     }
 

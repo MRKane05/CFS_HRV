@@ -1,137 +1,177 @@
 package com.vitahot.ms_battery_nz.ui.results;
 
-import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
-import com.vitahot.ms_battery_nz.databinding.FragmentNotificationsBinding;
+import com.vitahot.ms_battery_nz.HRVDataManager;
+import com.vitahot.ms_battery_nz.R;
+import com.vitahot.ms_battery_nz.ReminderManager;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ResultsFragment extends Fragment {
-    private static final String FILENAME = "hrv_data.json";
-    private Button exportDataButton;
-    private Button importDataButton;
-    private FragmentNotificationsBinding binding;
 
-    private Context context;
+    private HRVDataManager hrvManager;
+    private ActivityResultLauncher<String[]> permissionLauncher;
 
-    private TextView textView;
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        ResultsViewModel resultsViewModel =
-                new ViewModelProvider(this).get(ResultsViewModel.class);
-
-        this.context = context;
-        binding = FragmentNotificationsBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
-
-        return root;
-    }
-
-    public void CopyDataFromDocuments() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                File fileSource = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FILENAME);
-
-                if(fileSource.exists()) {
-                    File fileTarget = new File(context.getFilesDir(), FILENAME);
-
-                    try {
-                        FileInputStream inStream = new FileInputStream(fileSource);
-                        FileOutputStream outStream = new FileOutputStream(fileTarget);
-
-                        byte[] buffer = new byte[1024];
-                        int length;
-                        while ((length = inStream.read(buffer)) > 0) {
-                            outStream.write(buffer, 0, length);
-                        }
-
-                        inStream.close();
-                        outStream.close();
-
-                        // Update UI on main thread (Fragment version)
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                textView.setText(FILENAME + " successfully copied from Documents");
-                            }
-                        });
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                textView.setText("Error copying file: " + e.getMessage());
-                            }
-                        });
+        // Initialize the permission launcher
+        permissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> {
+                    android.util.Log.d("ReminderDialog", "Permission results:");
+                    for (String permission : result.keySet()) {
+                        Boolean granted = result.get(permission);
+                        android.util.Log.d("ReminderDialog", permission + ": " + granted);
                     }
 
-                } else {
-                    // Update UI on main thread (Fragment version)
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            textView.setText(FILENAME + " not found in Documents");
+                    boolean allGranted = true;
+                    for (Boolean granted : result.values()) {
+                        if (!granted) {
+                            allGranted = false;
+                            break;
                         }
-                    });
-                }
-            }
-        }).start();
-    }
+                    }
 
-    public void CopyDataToDocuments() {
-        File fileSource = new File(context.getFilesDir(), FILENAME);
-        if(fileSource.exists()) {
-            File fileTarget = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FILENAME);
+                    android.util.Log.d("ReminderDialog", "All granted: " + allGranted);
 
-            try {
-                // Use streams to copy the file (works on all API levels)
-                FileInputStream inStream = new FileInputStream(fileSource);
-                FileOutputStream outStream = new FileOutputStream(fileTarget);
-
-                byte[] buffer = new byte[1024];
-                int length;
-                while ((length = inStream.read(buffer)) > 0) {
-                    outStream.write(buffer, 0, length);
-                }
-
-                inStream.close();
-                outStream.close();
-
-                // Do something after successful copy
-                textView.setText(FILENAME + " successfully copied to Documents");
-            } catch (IOException e) {
-                e.printStackTrace();
-                // Handle the error appropriately
-            }
-
-        } else {
-            // Handle file not found
-            textView.setText(FILENAME + " not found in CFS app");
-        }
+                    if (allGranted) {
+                        android.util.Log.d("ReminderDialog", "All permissions granted");
+                        showTimePicker();
+                    } else {
+                        android.util.Log.d("ReminderDialog", "Some permissions denied");
+                        Toast.makeText(getContext(), "Permissions required to set reminders", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_notifications, container, false);
+
+        hrvManager = new HRVDataManager(getContext());
+
+        // Privacy Policy Button
+        Button privacyButton = view.findViewById(R.id.privacy_policy_button);
+        privacyButton.setOnClickListener(v -> openPrivacyPolicy());
+
+        // Delete Data Button
+        Button deleteButton = view.findViewById(R.id.delete_data_button);
+        deleteButton.setOnClickListener(v -> deleteUserData());
+
+        // Reminder Button
+        Button reminderButton = view.findViewById(R.id.reminder_button);
+        reminderButton.setOnClickListener(v -> showReminderDialog());
+
+        return view;
+    }
+
+    private void openPrivacyPolicy() {
+        String docUrl = "https://docs.google.com/document/d/YOUR_DOC_ID/edit?usp=sharing";
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(docUrl));
+        startActivity(intent);
+    }
+
+    private void deleteUserData() {
+        if (getContext() == null) {
+            Toast.makeText(getActivity(), "Context is null", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (hrvManager == null) {
+            hrvManager = new HRVDataManager(getContext());
+        }
+
+        android.util.Log.d("DeleteData", "Attempting to delete data...");
+        boolean deleted = hrvManager.deleteAllData();
+
+        android.util.Log.d("DeleteData", "Delete result: " + deleted);
+
+        if (deleted) {
+            Toast.makeText(getContext(), "All data has been deleted", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getContext(), "No data to delete", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showReminderDialog() {
+        android.util.Log.d("ReminderDialog", "showReminderDialog called");
+
+        List<String> permissionsToRequest = new ArrayList<>();
+
+        // Check POST_NOTIFICATIONS (Android 13+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+
+        // For SCHEDULE_EXACT_ALARM on Android 12+, we check if we can schedule exact alarms.
+        // If not, we should ideally guide the user to settings, but for simplicity in this flow,
+        // we'll proceed and ReminderManager will handle the fallback or we can add the check here.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            android.app.AlarmManager alarmManager = (android.app.AlarmManager) requireContext().getSystemService(android.content.Context.ALARM_SERVICE);
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Toast.makeText(getContext(), "Please allow exact alarms in settings for precise reminders", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
+                startActivity(intent);
+                return;
+            }
+        }
+
+        if (permissionsToRequest.isEmpty()) {
+            showTimePicker();
+        } else {
+            permissionLauncher.launch(permissionsToRequest.toArray(new String[0]));
+        }
+    }
+
+    private void showTimePicker() {
+        android.util.Log.d("ReminderDialog", "showTimePicker called");
+
+        try {
+            TimePicker timePicker = new TimePicker(getContext());
+
+            new android.app.AlertDialog.Builder(getContext())
+                    .setTitle("Set Daily Reminder")
+                    .setMessage("What time would you like to be reminded each day?")
+                    .setView(timePicker)
+                    .setPositiveButton("Set Reminder", (dialog, which) -> {
+                        int hour = timePicker.getHour();
+                        int minute = timePicker.getMinute();
+                        android.util.Log.d("ReminderDialog", "Setting reminder for " + hour + ":" + String.format("%02d", minute));
+                        ReminderManager.setDailyReminder(getContext(), hour, minute);
+                        Toast.makeText(getContext(), "✓ Daily reminder set for " + hour + ":" +
+                                String.format("%02d", minute), Toast.LENGTH_LONG).show();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+
+            android.util.Log.d("ReminderDialog", "Dialog shown");
+        } catch (Exception e) {
+            android.util.Log.e("ReminderDialog", "Error showing time picker", e);
+            Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 }

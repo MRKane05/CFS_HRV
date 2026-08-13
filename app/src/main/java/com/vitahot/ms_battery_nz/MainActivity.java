@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -35,6 +36,7 @@ import android.widget.Toast;
 import android.Manifest;
 
 import com.vitahot.ms_battery_nz.ui.measure.MeasureFragment;
+import com.vitahot.ms_battery_nz.ui.results.ResultsFragment;
 import com.vitahot.ms_battery_nz.ui.symptoms.SymptomsFragment;
 import com.github.mikephil.charting.components.LimitLine;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -212,6 +214,8 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                         selected_fragment = new MeasureFragment();
                     } else if (id == R.id.navigation_symptoms) {
                         selected_fragment = new SymptomsFragment();
+                    } else if (id == R.id.navigation_results) {
+                        selected_fragment = new ResultsFragment();  //This is our info screen with things like the privacy policy
                     }
 
                     if (selected_fragment != null) {
@@ -229,6 +233,9 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                         .replace(R.id.fragment_container, new MeasureFragment())
                         .commit();
             }
+
+            // Check if opened from notification and if so go to our symptoms page
+            handleIntent(getIntent());
 
             // Start measuring time for sampling window
             start_Time = System.currentTimeMillis();
@@ -508,6 +515,21 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 Toast.makeText(this, "Permissions not granted by the user.",
                         Toast.LENGTH_SHORT).show();
                 finish();
+            }
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && "symptoms".equals(intent.getStringExtra("navigate_to"))) {
+            if (bottomNavigationView != null) {
+                bottomNavigationView.setSelectedItemId(R.id.navigation_symptoms);
             }
         }
     }

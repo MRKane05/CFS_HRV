@@ -72,7 +72,8 @@ public class MessageDisplayManager {
             "You can shuttle back/forward through your daily records and set fatigue levels you feel to be incorrect",
             "It doesn't matter if you miss a day, or even a week, the system will handle this",
             "Different devices can record wildly different RMSSD values - it's a flaw of using a phone camera",
-            "All your data is stored locally at: Android\\data\\com.vitahot.ms_battery_nz\\files\\Documents\\hrv_data.json.\nNo cloud servers, no other agent, no company interests"
+            "All your data is stored locally on your phone, AND encrypted. No servers, no uploads, nobody else gets to see or access it",
+            "The information panel has access to the app Privacy Policy, and you can delete your data from there, but be warned: there is no check in this action!"
     );
 
     // Constructor

@@ -81,16 +81,30 @@ public class ReminderManager {
         }
     }
 
-    public static void cancelReminder(Context context) {
+    public static boolean isReminderSet(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getInt(REMINDER_TIME_KEY, -1) != -1;
+    }
+
+    public static boolean cancelReminder(Context context) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (alarmManager == null) return;
-        
+        if (alarmManager == null) return false;
+
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean wasSet = prefs.getInt(REMINDER_TIME_KEY, -1) != -1;
+
         Intent intent = new Intent(context, ReminderBroadcastReceiver.class);
         intent.setAction("com.vitahot.ms_battery_nz.DAILY_REMINDER");
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, REMINDER_REQUEST_CODE, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
 
-        alarmManager.cancel(pendingIntent);
-        Log.d(TAG, "Reminder cancelled");
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent);
+            pendingIntent.cancel();
+        }
+
+        prefs.edit().remove(REMINDER_TIME_KEY).apply();
+        Log.d(TAG, "Reminder cancelled. Was set: " + wasSet);
+        return wasSet;
     }
 }

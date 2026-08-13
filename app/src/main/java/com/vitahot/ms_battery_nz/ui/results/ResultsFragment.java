@@ -81,7 +81,20 @@ public class ResultsFragment extends Fragment {
         Button reminderButton = view.findViewById(R.id.reminder_button);
         reminderButton.setOnClickListener(v -> showReminderDialog());
 
+        // Cancel Reminder Button
+        Button cancelReminderButton = view.findViewById(R.id.cancel_reminder_button);
+        cancelReminderButton.setOnClickListener(v -> cancelReminder());
+
         return view;
+    }
+
+    private void cancelReminder() {
+        boolean removed = ReminderManager.cancelReminder(requireContext());
+        if (removed) {
+            Toast.makeText(getContext(), "Daily reminder has been removed", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getContext(), "There was no reminder to remove", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openPrivacyPolicy() {

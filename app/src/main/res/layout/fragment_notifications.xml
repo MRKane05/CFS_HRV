@@ -108,12 +108,16 @@
         app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toBottomOf="@+id/privacy_policy_button" />
     <Button
-        android:id="@+id/test_reminder_button"
+        android:id="@+id/cancel_reminder_button"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Test Reminder (5 sec)"
-        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        android:backgroundTint="#8B0000"
+        android:text="Cancel Reminder"
+        android:textColor="#FFCFCFCF"
+        android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toBottomOf="@id/reminder_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

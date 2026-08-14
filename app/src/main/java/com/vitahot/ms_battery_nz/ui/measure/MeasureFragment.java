@@ -145,11 +145,12 @@ public class MeasureFragment extends Fragment {
 
         // Initialize message manager
         messageManager = new MessageDisplayManager(heartRateTextView);
-        messageManager.startStage(1);
 
         // Show welcome notice if it's the first time
         if (!ReminderManager.hasWelcomeNoticeBeenShown(requireContext())) {
             showWelcomeNotice();
+        } else {
+            messageManager.startStage(1);
         }
 
         // Setup chart
@@ -161,9 +162,12 @@ public class MeasureFragment extends Fragment {
     private void showWelcomeNotice() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Welcome to MS Battery")
-                .setMessage("To begin recording your Heart Rate Variability (HRV) data, please press the button below.\n\nIt's best to record this data before you even get out of bed each morning.")
+                .setMessage("To begin: start recording your Heart Rate Variability (HRV) data, please press the button below.\n\nIt's best to record this data before you even get out of bed each morning.")
                 .setPositiveButton("Got it", (dialog, which) -> {
                     ReminderManager.setWelcomeNoticeShown(requireContext());
+                    if (messageManager != null) {
+                        messageManager.startStage(1);
+                    }
                 })
                 .setCancelable(false)
                 .show();

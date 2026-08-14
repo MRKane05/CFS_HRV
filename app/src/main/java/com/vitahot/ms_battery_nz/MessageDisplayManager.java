@@ -34,9 +34,11 @@ public class MessageDisplayManager {
             "Try varying degrees of pressure on the screen to get a stable result",
             "Warm fingers give better measures, you might even need to warm the camera by holding a finger against it for a bit",
             "At worst try a different position/finger/hand for doing a measure",
+            "You may need to maneuver around your phones case to get a good signal",
             "You can make another measurement if your numbers seem out of character with how you feel",
             "A dark environment will give a better measure as surrounding light can affect measurement",
-            "If you cannot get a good measure happening try moving/stretching your hand/arm to promote blood flow"
+            "If you cannot get a good measure happening try moving/stretching your hand/arm to promote blood flow",
+            "Some people simply have trouble getting a PPG signal with a cellphone"
     );
 
     private List<String> stage3Messages = Arrays.asList(

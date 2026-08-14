@@ -57,9 +57,18 @@ public class ResultsFragment extends Fragment {
                         showTimePicker();
                     } else {
                         android.util.Log.d("ReminderDialog", "Some permissions denied");
+                        ReminderManager.setSetupPending(requireContext(), false);
                         Toast.makeText(getContext(), "Permissions required to set reminders", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (ReminderManager.isSetupPending(requireContext())) {
+            showReminderDialog();
+        }
     }
 
     @Override
@@ -145,6 +154,7 @@ public class ResultsFragment extends Fragment {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             android.app.AlarmManager alarmManager = (android.app.AlarmManager) requireContext().getSystemService(android.content.Context.ALARM_SERVICE);
             if (!alarmManager.canScheduleExactAlarms()) {
+                ReminderManager.setSetupPending(requireContext(), true);
                 Toast.makeText(getContext(), "Please allow exact alarms in settings for precise reminders", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
                 intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
@@ -175,10 +185,13 @@ public class ResultsFragment extends Fragment {
                         int minute = timePicker.getMinute();
                         android.util.Log.d("ReminderDialog", "Setting reminder for " + hour + ":" + String.format("%02d", minute));
                         ReminderManager.setDailyReminder(getContext(), hour, minute);
+                        ReminderManager.setPromptShown(requireContext());
                         Toast.makeText(getContext(), "✓ Daily reminder set for " + hour + ":" +
                                 String.format("%02d", minute), Toast.LENGTH_LONG).show();
                     })
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton("Cancel", (dialog, which) -> {
+                        ReminderManager.setSetupPending(requireContext(), false);
+                    })
                     .show();
 
             android.util.Log.d("ReminderDialog", "Dialog shown");

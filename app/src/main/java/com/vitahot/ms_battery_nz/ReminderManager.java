@@ -15,12 +15,35 @@ public class ReminderManager {
     private static final String REMINDER_TIME_KEY = "reminder_time";
     private static final int REMINDER_REQUEST_CODE = 100;
     private static final String TAG = "ReminderManager";
+    private static final String PROMPT_SHOWN_KEY = "reminder_prompt_shown";
+    private static final String SETUP_PENDING_KEY = "reminder_setup_pending";
+
+    public static boolean hasPromptBeenShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(PROMPT_SHOWN_KEY, false);
+    }
+
+    public static void setPromptShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(PROMPT_SHOWN_KEY, true).apply();
+    }
+
+    public static void setSetupPending(Context context, boolean pending) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(SETUP_PENDING_KEY, pending).apply();
+    }
+
+    public static boolean isSetupPending(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(SETUP_PENDING_KEY, false);
+    }
 
     public static void setDailyReminder(Context context, int hourOfDay, int minute) {
         Log.d(TAG, "setDailyReminder called for " + hourOfDay + ":" + String.format("%02d", minute));
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putInt(REMINDER_TIME_KEY, hourOfDay * 60 + minute).apply();
+        prefs.edit().putBoolean(SETUP_PENDING_KEY, false).apply(); // Clear pending on success
 
         scheduleReminder(context, hourOfDay, minute);
     }

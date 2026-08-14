@@ -1,11 +1,12 @@
 package com.vitahot.ms_battery_nz.ui.symptoms;
 
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.Locale;
-
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,8 +16,13 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -25,11 +31,16 @@ import com.vitahot.ms_battery_nz.ForestDataPoint;
 import com.vitahot.ms_battery_nz.HRVBaselineAnalyzer;
 import com.vitahot.ms_battery_nz.HRVData;
 import com.vitahot.ms_battery_nz.HRVDataManager;
+import com.vitahot.ms_battery_nz.ReminderManager;
 import com.vitahot.ms_battery_nz.databinding.FragmentDashboardBinding;
 import com.vitahot.ms_battery_nz.MessageDisplayManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Locale;
 
 
 public class SymptomsFragment extends Fragment {
@@ -58,6 +69,33 @@ public class SymptomsFragment extends Fragment {
 
     private TextView guideTextView;
     private MessageDisplayManager messageManager;
+
+    private ActivityResultLauncher<String[]> permissionLauncher;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        permissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestMultiplePermissions(),
+                result -> {
+                    boolean allGranted = true;
+                    for (Boolean granted : result.values()) {
+                        if (!granted) {
+                            allGranted = false;
+                            break;
+                        }
+                    }
+
+                    if (allGranted) {
+                        showTimePicker();
+                    } else {
+                        Toast.makeText(getContext(), "Permissions required to set reminders", Toast.LENGTH_SHORT).show();
+                        ReminderManager.setSetupPending(requireContext(), false);
+                        ReminderManager.setPromptShown(requireContext());
+                        showInformationPageMessage();
+                    }
+                });
+    }
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -128,6 +166,11 @@ public class SymptomsFragment extends Fragment {
         super.onResume();
         if (messageManager != null) {   //resume our messages for this screen
             messageManager.startStage(4);
+        }
+
+        // Check if we were in the middle of a reminder setup and just returned
+        if (ReminderManager.isSetupPending(requireContext())) {
+            showReminderDialog();
         }
     }
 
@@ -316,17 +359,96 @@ public class SymptomsFragment extends Fragment {
      * @param fatigueLevel The selected fatigue level (0-5)
      */
     private void onFatigueLevelSelected(int fatigueLevel) {
-        // Clear all radio buttons first
-        //clearAllRadioButtons();
-
-        // Set the selected radio button
-        //setRadioButtonChecked(fatigueLevel, true);
-
         // Store the current selection
         currentFatigueLevel = fatigueLevel;
 
         // Save to your dataset here
         hrvData.setFatigueLevel(fatigueLevel, dayOffset);
+
+        // Check if we should prompt for reminder (only once)
+        if (!ReminderManager.hasPromptBeenShown(requireContext())) {
+            showReminderPrompt();
+        }
+    }
+
+    private void showReminderPrompt() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Daily Reminder")
+                .setMessage("Would you like to set a daily reminder to log your fatigue levels?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    showReminderDialog();
+                })
+                .setNegativeButton("No", (dialog, which) -> {
+                    ReminderManager.setPromptShown(requireContext());
+                    showInformationPageMessage();
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void showInformationPageMessage() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Reminder Settings")
+                .setMessage("You can set or change your daily reminder at any time from the Information page.")
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showReminderDialog() {
+        List<String> permissionsToRequest = new ArrayList<>();
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
+            if (alarmManager != null && !alarmManager.canScheduleExactAlarms()) {
+                ReminderManager.setSetupPending(requireContext(), true);
+                Toast.makeText(getContext(), "Please allow exact alarms in settings for precise reminders", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
+                startActivity(intent);
+                return;
+            }
+        }
+
+        if (permissionsToRequest.isEmpty()) {
+            showTimePicker();
+        } else {
+            permissionLauncher.launch(permissionsToRequest.toArray(new String[0]));
+        }
+    }
+
+    private void showTimePicker() {
+        try {
+            TimePicker timePicker = new TimePicker(getContext());
+            new AlertDialog.Builder(getContext())
+                    .setTitle("Set Daily Reminder")
+                    .setMessage("What time would you like to be reminded each day?")
+                    .setView(timePicker)
+                    .setPositiveButton("Set Reminder", (dialog, which) -> {
+                        int hour = timePicker.getHour();
+                        int minute = timePicker.getMinute();
+                        ReminderManager.setDailyReminder(getContext(), hour, minute);
+                        Toast.makeText(getContext(), "✓ Daily reminder set", Toast.LENGTH_LONG).show();
+                        ReminderManager.setPromptShown(requireContext());
+                        showInformationPageMessage();
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> {
+                        ReminderManager.setSetupPending(requireContext(), false);
+                        ReminderManager.setPromptShown(requireContext());
+                        showInformationPageMessage();
+                    })
+                    .setCancelable(false)
+                    .show();
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            ReminderManager.setPromptShown(requireContext());
+        }
     }
 
     private void onHeadacheLevelSelected(int headacheLevel) {

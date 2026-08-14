@@ -119,6 +119,11 @@ public class SymptomsFragment extends Fragment {
         messageManager = new MessageDisplayManager(guideTextView);
         messageManager.startStage(4);
 
+        // Show symptoms notice if it's the first time
+        if (!ReminderManager.hasSymptomsNoticeBeenShown(requireContext())) {
+            showSymptomsNotice();
+        }
+
 
         fatigueGroup = binding.fatigueRadioGroup;
         //headacheGroup = binding.headacheRadioGroup;
@@ -391,6 +396,17 @@ public class SymptomsFragment extends Fragment {
                 .setTitle("Reminder Settings")
                 .setMessage("You can set or change your daily reminder at any time from the Information page.")
                 .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private void showSymptomsNotice() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Setting Symptoms")
+                .setMessage("Please select the level of fatigue you experienced today.\n\nThis is best set at the end of the day based on how you feel. Your fatigue level can be updated at any time, and the data you enter will be used to improve the accuracy of future predictions.")
+                .setPositiveButton("OK", (dialog, which) -> {
+                    ReminderManager.setSymptomsNoticeShown(requireContext());
+                })
+                .setCancelable(false)
                 .show();
     }
 

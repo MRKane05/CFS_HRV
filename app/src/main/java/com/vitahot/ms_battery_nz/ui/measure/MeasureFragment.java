@@ -1,6 +1,7 @@
 package com.vitahot.ms_battery_nz.ui.measure;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -34,6 +35,7 @@ import com.vitahot.ms_battery_nz.ImageProcessing;
 import com.vitahot.ms_battery_nz.MainActivity;
 import com.vitahot.ms_battery_nz.MessageDisplayManager;
 import com.vitahot.ms_battery_nz.R;
+import com.vitahot.ms_battery_nz.ReminderManager;
 import com.vitahot.ms_battery_nz.databinding.FragmentHomeBinding;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -145,10 +147,26 @@ public class MeasureFragment extends Fragment {
         messageManager = new MessageDisplayManager(heartRateTextView);
         messageManager.startStage(1);
 
+        // Show welcome notice if it's the first time
+        if (!ReminderManager.hasWelcomeNoticeBeenShown(requireContext())) {
+            showWelcomeNotice();
+        }
+
         // Setup chart
         setupChart();
 
         return root;
+    }
+
+    private void showWelcomeNotice() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Welcome to MS Battery")
+                .setMessage("To begin recording your Heart Rate Variability (HRV) data, please press the button below.\n\nIt's best to record this data before you even get out of bed each morning.")
+                .setPositiveButton("Got it", (dialog, which) -> {
+                    ReminderManager.setWelcomeNoticeShown(requireContext());
+                })
+                .setCancelable(false)
+                .show();
     }
 
     @Override
@@ -308,10 +326,11 @@ public class MeasureFragment extends Fragment {
         redColorChart.setDragEnabled(false);
         redColorChart.setScaleEnabled(true);
         redColorChart.setPinchZoom(true);
+        redColorChart.getLegend().setEnabled(false);
 
         // Chart description
         Description description = new Description();
-        description.setText("PPG Measure");
+        description.setText("PPG Waveform");
         description.setTextSize(12f);
         description.setTextColor(Color.WHITE);
         redColorChart.setDescription(description);
@@ -337,7 +356,7 @@ public class MeasureFragment extends Fragment {
         redColorChart.invalidate();
 
         // Make sure to create initial dataset
-        LineDataSet dataSet = new LineDataSet(new ArrayList<>(), "PPG Value");
+        LineDataSet dataSet = new LineDataSet(new ArrayList<>(), "");
         dataSet.setColor(Color.LTGRAY);
         dataSet.setDrawCircles(false);
         //dataSet.setCircleRadius(0f);
@@ -347,7 +366,10 @@ public class MeasureFragment extends Fragment {
         dataSet.setLineWidth(2f);
         dataSet.setMode(LineDataSet.Mode.LINEAR);
 
+
         LineData lineData = new LineData(dataSet);
+        lineData.setDrawValues(false);
+
         redColorChart.setData(lineData);
         redColorChart.invalidate();
     }

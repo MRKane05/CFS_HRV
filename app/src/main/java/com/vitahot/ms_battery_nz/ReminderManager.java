@@ -17,6 +17,8 @@ public class ReminderManager {
     private static final String TAG = "ReminderManager";
     private static final String PROMPT_SHOWN_KEY = "reminder_prompt_shown";
     private static final String SETUP_PENDING_KEY = "reminder_setup_pending";
+    private static final String WELCOME_SHOWN_KEY = "welcome_notice_shown";
+    private static final String SYMPTOMS_NOTICE_SHOWN_KEY = "symptoms_notice_shown";
 
     public static boolean hasPromptBeenShown(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -26,6 +28,26 @@ public class ReminderManager {
     public static void setPromptShown(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putBoolean(PROMPT_SHOWN_KEY, true).apply();
+    }
+
+    public static boolean hasWelcomeNoticeBeenShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(WELCOME_SHOWN_KEY, false);
+    }
+
+    public static void setWelcomeNoticeShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(WELCOME_SHOWN_KEY, true).apply();
+    }
+
+    public static boolean hasSymptomsNoticeBeenShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(SYMPTOMS_NOTICE_SHOWN_KEY, false);
+    }
+
+    public static void setSymptomsNoticeShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(SYMPTOMS_NOTICE_SHOWN_KEY, true).apply();
     }
 
     public static void setSetupPending(Context context, boolean pending) {

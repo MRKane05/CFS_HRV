@@ -683,6 +683,8 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
         }
     }
 
+    private double dcG_fallback = 0;
+
     private float processImageFromYPlane(ImageProxy imageProxy) {
 
         @OptIn(markerClass = ExperimentalGetImage.class) Image image = imageProxy.getImage();
@@ -691,8 +693,6 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
         }
 
         try {
-            // Signal Extraction following "GREEN" method from Bioengineering 2022 article:
-            // GREEN channel is considered most similar to the pulse signal due to hemoglobin absorption.
             Image.Plane yPlane = image.getPlanes()[0];
             Image.Plane uPlane = image.getPlanes()[1];
             Image.Plane vPlane = image.getPlanes()[2];
@@ -703,12 +703,11 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
             int width = image.getWidth();
             int height = image.getHeight();
-            
             int yRowStride = yPlane.getRowStride();
             int uvRowStride = uPlane.getRowStride();
             int uvPixelStride = uPlane.getPixelStride();
 
-            long totalR = 0, totalG = 0;
+            long totalR = 0, totalG = 0, totalB = 0;
             int sampleCount = 0;
 
             int step = 20; 
@@ -723,12 +722,14 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                     int uVal = (uBuf.get(uvIdx) & 0xFF) - 128;
                     int vVal = (vBuf.get(uvIdx) & 0xFF) - 128;
 
-                    // YUV to RGB (R is used for brightness tracking, G for the PPG signal)
+                    // YUV to RGB (R, G, B are all used for the combined PPG signal)
                     int r = (int) (yVal + 1.370705 * vVal);
                     int g = (int) (yVal - 0.337633 * uVal - 0.698001 * vVal);
+                    int b = (int) (yVal + 1.732446 * uVal);
 
                     totalR += Math.max(0, Math.min(255, r));
                     totalG += Math.max(0, Math.min(255, g));
+                    totalB += Math.max(0, Math.min(255, b));
                     sampleCount++;
                 }
             }
@@ -737,33 +738,47 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
             double avgR = (double) totalR / sampleCount;
             double avgG = (double) totalG / sampleCount;
+            double avgB = (double) totalB / sampleCount;
 
             if (isOptimizingExposure) {
-                // Tracking variance of the Green signal while using Red for exposure anchoring
-                exposureSamples.add(avgG);
+                // Exposure optimization anchored on average brightness (Rec. 601)
+                double brightness = (0.299 * avgR) + (0.587 * avgG) + (0.114 * avgB);
+                
+                exposureSamples.add(avgR); // Still use Red for variance as it's the cleanest
                 if (exposureSamples.size() >= SAMPLES_PER_EXPOSURE) {
                     double sum = 0;
                     for (double s : exposureSamples) sum += s;
-                    double meanG = sum / exposureSamples.size();
+                    double meanR = sum / exposureSamples.size();
                     double sumSq = 0;
-                    for (double s : exposureSamples) sumSq += (s - meanG) * (s - meanG);
-                    double varG = sumSq / exposureSamples.size();
-                    
-                    runExposureStep(avgR, varG);
+                    for (double s : exposureSamples) sumSq += (s - meanR) * (s - meanR);
+                    double varR = sumSq / exposureSamples.size();
+                    runExposureStep(brightness, varR);
                     exposureSamples.clear();
                 }
             }
 
-            float ppgSignal = (float) avgG;
-            updateRedColorChart(ppgSignal);
+            // Signal Combination as per "OpenPPG" research: 
+            // Arithmetic average of all three channels (R, G, B).
+            // This provides a baseline intensity representing the total reflected brightness.
+            float ppgSignal = (float) ((avgR + avgG + avgB) / 3.0);
+            
+            // Note: The "Inverse" relationship (G increases as R decreases) mentioned in research
+            // refers to the AC pulsatile components being in anti-phase. 
+            // OpenPPG uses the simple average for the "Main PPG" waveform.
+
+            // Re-center for the graph (0-255 range)
+            dcG_fallback = (dcG_fallback == 0) ? ppgSignal : (dcG_fallback * 0.98 + ppgSignal * 0.02);
+            float centeredSignal = (float) (ppgSignal - dcG_fallback + 128.0);
+
+            updateRedColorChart(centeredSignal);
 
             if (doingDataSample) {
-                dataPointList.add(new HRVMeasurementSystem.DataPoint((double)ppgSignal, System.currentTimeMillis()));
+                dataPointList.add(new HRVMeasurementSystem.DataPoint((double)centeredSignal, System.currentTimeMillis()));
             }
 
-            return ppgSignal;
+            return centeredSignal;
         } catch (Exception e) {
-            Log.e("SIGNAL_EXTRACTION", "Error extracting RGB signal", e);
+            Log.e("SIGNAL_EXTRACTION", "Error extracting PPG signal", e);
         } finally {
             imageProxy.close();
         }

@@ -58,36 +58,18 @@ public class HRVMeasurementSystem {
     private static List<DataPoint> preprocessSignal(List<DataPoint> data, double samplingRate) {
         if (data.size() < 10) return data;
 
-        // Step 1: Moving Window Normalization (to remove slow drifts/baseline)
-        // Per research, this is critical for PPG which has a large DC component
-        List<DataPoint> normalized = applyMovingNormalization(data, (int)(samplingRate * 2.0)); 
+        // Apply moving average filter to reduce noise (less aggressive)
+        List<DataPoint> smoothed = applyMovingAverage(data, 5);
 
-        // Step 2: Scientific Bandpass Filter (0.65 - 4.0 Hz)
-        // This range covers heart rates from 39 BPM to 240 BPM, filtering out motion 
-        // and high-frequency sensor noise.
-        List<DataPoint> filtered = applyBandpassFilter(normalized, samplingRate, 0.65, 4.0);
+        // Apply bandpass filter (0.5-4 Hz for heart rate)
+        // Standard range to avoid over-filtering the pulsatile components
+        List<DataPoint> filtered = applyBandpassFilter(smoothed, samplingRate, 0.5, 4.0);
 
-        // Step 3: Final Smoothing (Moving Average)
-        return applyMovingAverage(filtered, 3);
+        // Normalize the signal
+        return normalizeSignal(filtered);
     }
 
-    /**
-     * Moving window normalization (Min-Max or Zero-Mean) to handle baseline wander.
-     */
-    private static List<DataPoint> applyMovingNormalization(List<DataPoint> data, int windowSize) {
-        List<DataPoint> result = new ArrayList<>();
-        for (int i = 0; i < data.size(); i++) {
-            int start = Math.max(0, i - windowSize / 2);
-            int end = Math.min(data.size(), i + windowSize / 2);
-            
-            double sum = 0;
-            for (int j = start; j < end; j++) sum += data.get(j).value;
-            double mean = sum / (end - start);
-            
-            result.add(new DataPoint(data.get(i).value - mean, data.get(i).timestamp));
-        }
-        return result;
-    }
+
 
     /**
      * Simple moving average filter

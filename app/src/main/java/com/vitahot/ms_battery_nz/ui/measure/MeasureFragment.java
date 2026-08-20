@@ -247,6 +247,7 @@ public class MeasureFragment extends Fragment {
 
                 if (mainActivity != null) {
                     mainActivity.stopExposureOptimization(true);
+                    mainActivity.prepareForRecording();
                     mainActivity.doingDataSample = true;
                     mainActivity.sample_startTime = System.currentTimeMillis();
                 }
@@ -257,7 +258,6 @@ public class MeasureFragment extends Fragment {
                 }
                 //MainActivity mainActivity = (MainActivity) getActivity();
 
-                mainActivity.dataPointList.clear();
                 if (measureButton != null) {
                     getActivity().runOnUiThread(new Runnable() {
                         public void run(){
@@ -295,6 +295,9 @@ public class MeasureFragment extends Fragment {
                         results.heartRate, results.validBeats);*/
 
                 saveResultsToDatabase();
+                if (mainActivity != null) {
+                    mainActivity.exportData();
+                }
 
                 setTorch(false);
                 sampleButtonState = 0;

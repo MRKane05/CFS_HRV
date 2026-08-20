@@ -19,6 +19,7 @@ public class ReminderManager {
     private static final String SETUP_PENDING_KEY = "reminder_setup_pending";
     private static final String WELCOME_SHOWN_KEY = "welcome_notice_shown";
     private static final String SYMPTOMS_NOTICE_SHOWN_KEY = "symptoms_notice_shown";
+    private static final String POSITION_NOTICE_SHOWN_KEY = "position_notice_shown";
 
     public static boolean hasPromptBeenShown(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -48,6 +49,16 @@ public class ReminderManager {
     public static void setSymptomsNoticeShown(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putBoolean(SYMPTOMS_NOTICE_SHOWN_KEY, true).apply();
+    }
+
+    public static boolean hasPositionNoticeBeenShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(POSITION_NOTICE_SHOWN_KEY, false);
+    }
+
+    public static void setPositionNoticeShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(POSITION_NOTICE_SHOWN_KEY, true).apply();
     }
 
     public static void setSetupPending(Context context, boolean pending) {

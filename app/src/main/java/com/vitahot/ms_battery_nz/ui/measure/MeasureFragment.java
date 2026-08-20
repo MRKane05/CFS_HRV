@@ -225,20 +225,18 @@ public class MeasureFragment extends Fragment {
         MainActivity mainActivity = (MainActivity) getActivity();
         switch (sampleButtonState) {
             case 0:
-                if (measureButton != null) {
-                    getActivity().runOnUiThread(new Runnable() {
-                        public void run(){
-                            measureButton.setText("Get a Good Signal\nTap to Record");
-                        }
-                    });
-                }
-                if (messageManager != null) {
-                    messageManager.startStage(2);
-                }
-                sampleButtonState = 1;
-                setTorch(true);
-                if (mainActivity != null) {
-                    mainActivity.startExposureOptimization();
+                if (!ReminderManager.hasPositionNoticeBeenShown(requireContext())) {
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Positioning your finger")
+                            .setMessage("Position a finger across the lens and LED light. This can be either hand, and you might have to hold your phone in a funny way to get a good measure. To restart the process go to any tab and return to 'Measure'")
+                            .setPositiveButton("Got it", (dialog, which) -> {
+                                ReminderManager.setPositionNoticeShown(requireContext());
+                                proceedToGetSignal();
+                            })
+                            .setCancelable(false)
+                            .show();
+                } else {
+                    proceedToGetSignal();
                 }
                 break;
 
@@ -313,6 +311,21 @@ public class MeasureFragment extends Fragment {
                     });
                 }
                 break;
+        }
+    }
+
+    private void proceedToGetSignal() {
+        if (measureButton != null) {
+            getActivity().runOnUiThread(() -> measureButton.setText("Get a Good Signal\nTap to Record"));
+        }
+        if (messageManager != null) {
+            messageManager.startStage(2);
+        }
+        sampleButtonState = 1;
+        setTorch(true);
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity != null) {
+            mainActivity.startExposureOptimization();
         }
     }
 

@@ -616,6 +616,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 
                 camera.getCameraControl().setExposureCompensationIndex(currentExposureIndex);
                 Log.d(TAG, "Exposure sweep started: [" + minExposure + " to " + maxExposure + "]");
+                Toast.makeText(this, "Searching for optimal brightness... please wait", Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 Log.e(TAG, "Sweep start error", e);
             }
@@ -674,7 +675,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 isOptimizingExposure = false;
                 camera.getCameraControl().setExposureCompensationIndex(bestExposureIndex);
                 mainHandler.post(() -> {
-                    Toast.makeText(this, "Optimal HRV Exposure Locked", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Optimal HRV Exposure Locked. Wait for signal to stabilize before recording", Toast.LENGTH_SHORT).show();
                     Log.d(TAG, "Sweep finished. Best Level: " + bestExposureIndex);
                 });
             } else {

@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -581,6 +582,107 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
     public List<HRVMeasurementSystem.DataPoint> dataPointList = new ArrayList<>();
 
+    private boolean isOptimizingExposure = false;
+    private int minExposure = 0, maxExposure = 0;
+    private int currentExposureIndex = 0;
+    private double bestVariance = -1;
+    private int bestExposureIndex = 0;
+    private List<Double> exposureSamples = new ArrayList<>();
+    private static final int SAMPLES_PER_EXPOSURE = 8; // Faster sweep
+    private int exposureSettlingFrames = 0;
+    private static final int SETTLING_DELAY_FRAMES = 4; // Faster settling
+
+    public void startExposureOptimization() {
+        if (camera == null) return;
+        mainHandler.post(() -> {
+            try {
+                androidx.camera.core.ExposureState state = camera.getCameraInfo().getExposureState();
+                if (!state.isExposureCompensationSupported()) {
+                    Log.d(TAG, "Exposure compensation not supported");
+                    return;
+                }
+
+                minExposure = state.getExposureCompensationRange().getLower();
+                maxExposure = state.getExposureCompensationRange().getUpper();
+                
+                // Start from middle-low to avoid starting in saturation
+                currentExposureIndex = minExposure;
+                bestVariance = -10000; // Large negative for scoring
+                bestExposureIndex = 0;
+                exposureSamples.clear();
+                isOptimizingExposure = true;
+                exposureSettlingFrames = SETTLING_DELAY_FRAMES;
+                
+                camera.getCameraControl().setExposureCompensationIndex(currentExposureIndex);
+                Log.d(TAG, "Exposure sweep started: [" + minExposure + " to " + maxExposure + "]");
+            } catch (Exception e) {
+                Log.e(TAG, "Sweep start error", e);
+            }
+        });
+    }
+
+    public void stopExposureOptimization(boolean lockAtBest) {
+        isOptimizingExposure = false;
+        if (camera != null && lockAtBest && bestVariance > -1000) {
+            camera.getCameraControl().setExposureCompensationIndex(bestExposureIndex);
+            Log.d(TAG, "Locked exposure at best level: " + bestExposureIndex);
+        } else if (camera != null && !lockAtBest) {
+            camera.getCameraControl().setExposureCompensationIndex(0);
+        }
+    }
+
+    private void runExposureStep(double avgRed, double variance) {
+        if (!isOptimizingExposure) return;
+
+        if (exposureSettlingFrames > 0) {
+            exposureSettlingFrames--;
+            return;
+        }
+
+        exposureSamples.add(variance);
+        
+        if (exposureSamples.size() >= SAMPLES_PER_EXPOSURE) {
+            Collections.sort(exposureSamples);
+            double medianVariance = exposureSamples.get(exposureSamples.size() / 2);
+
+            // Odinaev et al. (2023) "Sweet Spot": 
+            // 1. Target range 175-210 (clipping starts at 235-240 on many sensors).
+            // 2. Prioritize signal shape (variance) within that range.
+            
+            double target = 195.0;
+            double distance = Math.abs(avgRed - target);
+            
+            // Primary goal: Variance. Secondary goal: Proximity to 195.
+            double score = medianVariance - (distance * 0.8);
+            
+            // Hard penalties for non-viable signals
+            if (avgRed > 230) score -= 5000; // Saturated - peaks are clipped
+            if (avgRed < 60) score -= 5000;  // Too dark - quantization noise dominates
+
+            Log.d(TAG, "Sweep Index " + currentExposureIndex + " | Red: " + String.format("%.0f", avgRed) + " | Var: " + String.format("%.2f", medianVariance) + " | Score: " + String.format("%.2f", score));
+
+            if (score > bestVariance) {
+                bestVariance = score;
+                bestExposureIndex = currentExposureIndex;
+            }
+
+            exposureSamples.clear();
+            currentExposureIndex += 2; // Move in steps of 2 for speed (~5s total sweep)
+
+            if (currentExposureIndex > maxExposure) {
+                isOptimizingExposure = false;
+                camera.getCameraControl().setExposureCompensationIndex(bestExposureIndex);
+                mainHandler.post(() -> {
+                    Toast.makeText(this, "Optimal HRV Exposure Locked", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Sweep finished. Best Level: " + bestExposureIndex);
+                });
+            } else {
+                camera.getCameraControl().setExposureCompensationIndex(currentExposureIndex);
+                exposureSettlingFrames = SETTLING_DELAY_FRAMES;
+            }
+        }
+    }
+
     private float processImageFromYPlane(ImageProxy imageProxy) {
 
         @OptIn(markerClass = ExperimentalGetImage.class) Image image = imageProxy.getImage();
@@ -589,56 +691,81 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
         }
 
         try {
-            Image.Plane yPlane = image.getPlanes()[0]; // Y plane is always at index 0
+            // Signal Extraction following "GREEN" method from Bioengineering 2022 article:
+            // GREEN channel is considered most similar to the pulse signal due to hemoglobin absorption.
+            Image.Plane yPlane = image.getPlanes()[0];
+            Image.Plane uPlane = image.getPlanes()[1];
+            Image.Plane vPlane = image.getPlanes()[2];
 
-            ByteBuffer buffer = yPlane.getBuffer();
+            ByteBuffer yBuf = yPlane.getBuffer();
+            ByteBuffer uBuf = uPlane.getBuffer();
+            ByteBuffer vBuf = vPlane.getBuffer();
+
             int width = image.getWidth();
             int height = image.getHeight();
-            int rowStride = yPlane.getRowStride();
+            
+            int yRowStride = yPlane.getRowStride();
+            int uvRowStride = uPlane.getRowStride();
+            int uvPixelStride = uPlane.getPixelStride();
 
-            // Sum the Y values across a sampled region (for performance)
-            long totalY = 0;
+            long totalR = 0, totalG = 0;
             int sampleCount = 0;
 
-            // Use a small grid sampling instead of every pixel to keep performance reasonable
-            int stepDivisor = 20;
-            int stepX = width / stepDivisor;
-            int stepY = height / stepDivisor;
+            int step = 20; 
+            for (int y = 0; y < height; y += step) {
+                for (int x = 0; x < width; x += step) {
+                    int yIdx = y * yRowStride + x;
+                    int uvIdx = (y / 2) * uvRowStride + (x / 2) * uvPixelStride;
 
-            for (int y = 0; y < height; y += stepY) {
-                for (int x = 0; x < width; x += stepX) {
-                    int index = y * rowStride + x;
-                    if (index < buffer.capacity()) {
-                        int luminance = buffer.get(index) & 0xFF; // Convert unsigned byte to int
-                        totalY += luminance;
-                        sampleCount++;
-                    }
+                    if (yIdx >= yBuf.capacity() || uvIdx >= uBuf.capacity() || uvIdx >= vBuf.capacity()) continue;
+
+                    int yVal = yBuf.get(yIdx) & 0xFF;
+                    int uVal = (uBuf.get(uvIdx) & 0xFF) - 128;
+                    int vVal = (vBuf.get(uvIdx) & 0xFF) - 128;
+
+                    // YUV to RGB (R is used for brightness tracking, G for the PPG signal)
+                    int r = (int) (yVal + 1.370705 * vVal);
+                    int g = (int) (yVal - 0.337633 * uVal - 0.698001 * vVal);
+
+                    totalR += Math.max(0, Math.min(255, r));
+                    totalG += Math.max(0, Math.min(255, g));
+                    sampleCount++;
                 }
             }
 
-            double averageLuminance = sampleCount > 0 ? (double) totalY / sampleCount : 0f;
+            if (sampleCount == 0) return 0;
 
-            updateRedColorChart((float)averageLuminance);
+            double avgR = (double) totalR / sampleCount;
+            double avgG = (double) totalG / sampleCount;
 
-            if (doingDataSample) {
-                recordedPoints.add(averageLuminance);
-
-                HRVMeasurementSystem.DataPoint newDataPoint = new HRVMeasurementSystem.DataPoint(averageLuminance, System.currentTimeMillis());
-                dataPointList.add(newDataPoint);
+            if (isOptimizingExposure) {
+                // Tracking variance of the Green signal while using Red for exposure anchoring
+                exposureSamples.add(avgG);
+                if (exposureSamples.size() >= SAMPLES_PER_EXPOSURE) {
+                    double sum = 0;
+                    for (double s : exposureSamples) sum += s;
+                    double meanG = sum / exposureSamples.size();
+                    double sumSq = 0;
+                    for (double s : exposureSamples) sumSq += (s - meanG) * (s - meanG);
+                    double varG = sumSq / exposureSamples.size();
+                    
+                    runExposureStep(avgR, varG);
+                    exposureSamples.clear();
+                }
             }
 
-            //detectPeaks(pixel_R);
-            //detectPeaks((float)averageLuminance);
-            //detectTroughs((float)averageLuminance);
+            float ppgSignal = (float) avgG;
+            updateRedColorChart(ppgSignal);
 
-            //Log.d("LUMINANCE", "Average Y value: " + averageLuminance);
+            if (doingDataSample) {
+                dataPointList.add(new HRVMeasurementSystem.DataPoint((double)ppgSignal, System.currentTimeMillis()));
+            }
 
-            // TODO: Use `averageLuminance` as your signal for heartbeat detection
-            return (float)averageLuminance;
+            return ppgSignal;
         } catch (Exception e) {
-            Log.e("LUMINANCE", "Error reading Y plane", e);
+            Log.e("SIGNAL_EXTRACTION", "Error extracting RGB signal", e);
         } finally {
-            imageProxy.close(); // Very important: must close to avoid memory leak
+            imageProxy.close();
         }
         return 0;
     }

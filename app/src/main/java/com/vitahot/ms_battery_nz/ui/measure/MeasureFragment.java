@@ -237,12 +237,16 @@ public class MeasureFragment extends Fragment {
                 }
                 sampleButtonState = 1;
                 setTorch(true);
+                if (mainActivity != null) {
+                    mainActivity.startExposureOptimization();
+                }
                 break;
 
             case 1:
                 setTorch(true);
 
                 if (mainActivity != null) {
+                    mainActivity.stopExposureOptimization(true);
                     mainActivity.doingDataSample = true;
                     mainActivity.sample_startTime = System.currentTimeMillis();
                 }
@@ -275,6 +279,7 @@ public class MeasureFragment extends Fragment {
 
                 if (mainActivity != null) {
                     mainActivity.doingDataSample = false;
+                    mainActivity.stopExposureOptimization(false);
                 }
                 doingDataSample = false;
                 if (messageManager != null) {

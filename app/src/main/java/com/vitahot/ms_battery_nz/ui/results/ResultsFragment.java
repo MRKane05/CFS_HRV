@@ -94,7 +94,27 @@ public class ResultsFragment extends Fragment {
         Button cancelReminderButton = view.findViewById(R.id.cancel_reminder_button);
         cancelReminderButton.setOnClickListener(v -> cancelReminder());
 
+        // Exposure Toggle Button
+        Button exposureButton = view.findViewById(R.id.exposure_toggle_button);
+        updateExposureButtonText(exposureButton);
+        exposureButton.setOnClickListener(v -> toggleExposureMode(exposureButton));
+
         return view;
+    }
+
+    private void toggleExposureMode(Button button) {
+        boolean currentMode = ReminderManager.isExposureAutoMode(requireContext());
+        boolean newMode = !currentMode;
+        ReminderManager.setExposureAutoMode(requireContext(), newMode);
+        updateExposureButtonText(button);
+        
+        String msg = newMode ? "Exposure set to Automatic" : "Exposure will be Remembered";
+        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void updateExposureButtonText(Button button) {
+        boolean isAuto = ReminderManager.isExposureAutoMode(requireContext());
+        button.setText(isAuto ? "Exposure: Automatic" : "Exposure: Remembered");
     }
 
     private void cancelReminder() {

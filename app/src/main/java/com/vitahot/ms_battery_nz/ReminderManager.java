@@ -20,6 +20,8 @@ public class ReminderManager {
     private static final String WELCOME_SHOWN_KEY = "welcome_notice_shown";
     private static final String SYMPTOMS_NOTICE_SHOWN_KEY = "symptoms_notice_shown";
     private static final String POSITION_NOTICE_SHOWN_KEY = "position_notice_shown";
+    private static final String EXPOSURE_AUTO_KEY = "exposure_auto_mode";
+    private static final String EXPOSURE_STORED_INDEX_KEY = "exposure_stored_index";
 
     public static boolean hasPromptBeenShown(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -59,6 +61,26 @@ public class ReminderManager {
     public static void setPositionNoticeShown(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putBoolean(POSITION_NOTICE_SHOWN_KEY, true).apply();
+    }
+
+    public static boolean isExposureAutoMode(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(EXPOSURE_AUTO_KEY, true);
+    }
+
+    public static void setExposureAutoMode(Context context, boolean auto) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(EXPOSURE_AUTO_KEY, auto).apply();
+    }
+
+    public static int getStoredExposureIndex(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getInt(EXPOSURE_STORED_INDEX_KEY, 0);
+    }
+
+    public static void setStoredExposureIndex(Context context, int index) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putInt(EXPOSURE_STORED_INDEX_KEY, index).apply();
     }
 
     public static void setSetupPending(Context context, boolean pending) {

@@ -207,9 +207,15 @@ public class MeasureFragment extends Fragment {
                 }
             }
 
-            // Reset button state when returning
+            // Reset button state and text when returning
             sampleButtonState = 0;
+            if (measureButton != null) {
+                measureButton.setText("Start Data Recording");
+            }
             mainActivity.stopMeasurement();
+            if (messageManager != null) {
+                messageManager.startStage(1);
+            }
         }
     }
 

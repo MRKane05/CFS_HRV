@@ -17,10 +17,10 @@ android {
 
     defaultConfig {
         applicationId = "com.vitahot.ms_battery_nz"
-        minSdk = 24
+        minSdk = 29
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 4
+        versionName = "0.45"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -20,7 +20,7 @@ public class MessageDisplayManager {
     // Define messages for each stage
     private List<String> stage1Messages = Arrays.asList(
             "Welcome. It's best to record data before you even get out of bed",
-            "Get comfortable and press button to begin",
+            "Get comfortable, position your finger across the LED light and camera lens, and press button to begin",
             "Try to be positioned so that you can breathe easily and don't need to shuffle",
             "Moving while taking a recording can cause noise in the data",
             "Different recording positions lying/seated/standing can tilt recorded data so try to be consistent"
@@ -28,9 +28,12 @@ public class MessageDisplayManager {
 
     private List<String> stage2Messages = Arrays.asList(
             "Place your finger over the LED and camera to start reading your hearts data",
+            "The system will search for an optimal camera exposure",
+            "You can set the exposure to automatic or remembered in the info tab - remembered is great if you measure in the same environment every morning",
             "Try to get a consistent saw-tooth pattern before starting the record",
             "Wait until graph stabilizes before starting a record",
-            "Try repositioning your finger if the camera view isn't red",
+            "Try repositioning your finger if the camera view isn't covered, or you're not getting a good measure",
+            "You may need to hold your phone in a funny way, if it's stupid but it works then it isn't stupid!",
             "Try varying degrees of pressure on the screen to get a stable result",
             "Warm fingers give better measures, you might even need to warm the camera by holding a finger against it for a bit",
             "At worst try a different position/finger/hand for doing a measure",
@@ -54,7 +57,8 @@ public class MessageDisplayManager {
             "It does feel like a long time but try to relax and stick with it",
             "Measuring HRV through a phone will be significantly noisier than a proper medical device, this is just an indicative app",
             "This is only to guess how much you've got in the tank for the day, it doesn't have to be perfect",
-            "Switching to the Symptoms screen while recording data will cancel the recording"
+            "Switching to the Symptoms screen while recording data will cancel the recording",
+            "You can reset the Measure screen by selecting any other tab and going back to it"
     );
 
     private List<String> stage4Messages = Arrays.asList(

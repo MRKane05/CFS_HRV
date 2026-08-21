@@ -210,6 +210,9 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 Fragment selected_fragment = null;
 
                 public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+                    // Turn off torch and reset state when switching tabs
+                    stopMeasurement();
+                    
                     int id = menuItem.getItemId();
                     if (id == R.id.navigation_measure) {
                         selected_fragment = new MeasureFragment();
@@ -355,9 +358,16 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
     }
 
     public void stopMeasurement() {
-        progressBar.setProgress(0);
+        if (progressBar != null) progressBar.setProgress(0);
         doingDataSample = false;
         sample_startTime = 0;
+        
+        // Ensure torch is off and optimization stops when switching views or canceling
+        if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+            camera.getCameraControl().enableTorch(false);
+            isTorchOn = false;
+        }
+        stopExposureOptimization(false);
     }
 
     private void startCamera() {
@@ -603,6 +613,15 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                     return;
                 }
 
+                // Check if user wants to use a remembered value
+                if (!ReminderManager.isExposureAutoMode(this)) {
+                    int storedIndex = ReminderManager.getStoredExposureIndex(this);
+                    camera.getCameraControl().setExposureCompensationIndex(storedIndex);
+                    Log.d(TAG, "Using remembered exposure index: " + storedIndex);
+                    Toast.makeText(this, "Using remembered exposure", Toast.LENGTH_SHORT).show();
+                    return; // Skip the sweep
+                }
+
                 minExposure = state.getExposureCompensationRange().getLower();
                 maxExposure = state.getExposureCompensationRange().getUpper();
                 
@@ -674,6 +693,10 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
             if (currentExposureIndex > maxExposure) {
                 isOptimizingExposure = false;
                 camera.getCameraControl().setExposureCompensationIndex(bestExposureIndex);
+                
+                // Always save the best index so it's ready if user toggles to "Remembered"
+                ReminderManager.setStoredExposureIndex(this, bestExposureIndex);
+
                 mainHandler.post(() -> {
                     Toast.makeText(this, "Optimal HRV Exposure Locked. Wait for signal to stabilize before recording", Toast.LENGTH_SHORT).show();
                     Log.d(TAG, "Sweep finished. Best Level: " + bestExposureIndex);
@@ -825,6 +848,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
 
     private int lastPeakPoint = 0;
 
+    int graph_zoom_framing = 4;
     private void handleGraphZooming(float currentRedValue) {
         //Handle the zooming in of our graph
         frame_stable_max = Math.max(frame_stable_max, currentRedValue);
@@ -834,8 +858,8 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
         frame_stable_min = MathUtils.lerp(frame_stable_min, currentRedValue, FRAME_STABLE_LERP_SPEED/100);
 
         YAxis leftAxis = redColorChart.getAxisLeft();
-        leftAxis.setAxisMinimum(frame_stable_min-2);  //0
-        leftAxis.setAxisMaximum(frame_stable_max+2);  //255
+        leftAxis.setAxisMinimum(frame_stable_min-graph_zoom_framing);  //0
+        leftAxis.setAxisMaximum(frame_stable_max+graph_zoom_framing);  //255
         //Zooming function complete :)
     }
 

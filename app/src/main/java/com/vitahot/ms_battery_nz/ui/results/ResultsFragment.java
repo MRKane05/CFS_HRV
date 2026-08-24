@@ -103,18 +103,39 @@ public class ResultsFragment extends Fragment {
     }
 
     private void toggleExposureMode(Button button) {
-        boolean currentMode = ReminderManager.isExposureAutoMode(requireContext());
-        boolean newMode = !currentMode;
-        ReminderManager.setExposureAutoMode(requireContext(), newMode);
+        int currentMode = ReminderManager.getExposureMode(requireContext());
+        int newMode = (currentMode + 1) % 3; // Toggle between 0, 1, 2
+        ReminderManager.setExposureMode(requireContext(), newMode);
         updateExposureButtonText(button);
         
-        String msg = newMode ? "Exposure set to Automatic" : "Exposure will be Remembered";
+        String msg;
+        switch (newMode) {
+            case ReminderManager.EXPOSURE_MODE_REMEMBERED:
+                msg = "Exposure will be Remembered";
+                break;
+            case ReminderManager.EXPOSURE_MODE_USER:
+                msg = "Exposure: User Controlled";
+                break;
+            default:
+                msg = "Exposure set to Automatic";
+                break;
+        }
         Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
     }
 
     private void updateExposureButtonText(Button button) {
-        boolean isAuto = ReminderManager.isExposureAutoMode(requireContext());
-        button.setText(isAuto ? "Exposure: Automatic" : "Exposure: Remembered");
+        int mode = ReminderManager.getExposureMode(requireContext());
+        switch (mode) {
+            case ReminderManager.EXPOSURE_MODE_REMEMBERED:
+                button.setText("Exposure: Remembered");
+                break;
+            case ReminderManager.EXPOSURE_MODE_USER:
+                button.setText("Exposure: User");
+                break;
+            default:
+                button.setText("Exposure: Automatic");
+                break;
+        }
     }
 
     private void cancelReminder() {

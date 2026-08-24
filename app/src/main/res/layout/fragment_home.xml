@@ -64,7 +64,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.95" />
+        app:layout_constraintGuide_percent="0.96" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_far_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.59" />
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_center_horizontal"
@@ -110,8 +117,8 @@
         android:clipToOutline="true"
         app:layout_constraintBottom_toTopOf="@id/guideline_30"
         app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/guideline_right"
-        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/guideline_10">
 
         <!-- Camera preview - circular, centered inside progress bar -->
@@ -135,8 +142,8 @@
         app:indicatorSize="150dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline_60"
         app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/guideline_right"
-        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline_07"
         app:trackColor="#384A75"
         app:trackThickness="8dp" />
@@ -168,5 +175,24 @@
         app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toBottomOf="@id/guideline_78"
         app:layout_constraintVertical_bias="0.2" />
+
+    <!-- Vertical Exposure Slider -->
+    <SeekBar
+        android:id="@+id/exposure_seekbar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="0dp"
+        android:rotation="270"
+        android:splitTrack="false"
+        android:thumbOffset="0dp"
+
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/guideline_30"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/guideline_far_right"
+        app:layout_constraintTop_toTopOf="@+id/guideline_10"
+        app:layout_constraintVertical_bias="0.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

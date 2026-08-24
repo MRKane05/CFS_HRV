@@ -62,6 +62,7 @@ public class MeasureFragment extends Fragment {
 
     private TextView heartRateTextView;
     private PreviewView previewView;
+    private android.widget.SeekBar exposureSeekBar;
     private Button measureButton;
     private TextView pixelDataView;
     private Camera camera;
@@ -119,6 +120,7 @@ public class MeasureFragment extends Fragment {
         progressBar = binding.progressBar;
         previewView = binding.previewView;
         measureButton = binding.measureButton;
+        exposureSeekBar = binding.exposureSeekbar;
         redColorChart = binding.redColorChart;
         heartRateTextView = binding.heartRateText;
 
@@ -210,12 +212,68 @@ public class MeasureFragment extends Fragment {
             // Reset button state and text when returning
             sampleButtonState = 0;
             if (measureButton != null) {
-                measureButton.setText("Start Data Recording");
+                measureButton.setText("Press to Begin");
             }
+            
+            setupExposureSeekBar();
+
             mainActivity.stopMeasurement();
             if (messageManager != null) {
                 messageManager.startStage(1);
             }
+        }
+    }
+
+    private void setupExposureSeekBar() {
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity == null || exposureSeekBar == null) return;
+
+        int mode = ReminderManager.getExposureMode(requireContext());
+        if (mode == ReminderManager.EXPOSURE_MODE_USER) {
+            exposureSeekBar.setVisibility(View.VISIBLE);
+            
+            android.util.Range<Integer> range = mainActivity.getExposureRange();
+            int min = range.getLower();
+            int max = range.getUpper();
+            
+            if (max > min) {
+                exposureSeekBar.setMax(max - min);
+                
+                int storedIndex = ReminderManager.getUserExposureIndex(requireContext());
+                int progress;
+                
+                // If it's 0 and we haven't checked a first-run flag, set to 50%
+                if (storedIndex == 0 && !ReminderManager.hasPromptBeenShown(requireContext())) {
+                    progress = (max - min) / 2;
+                    int initialIndex = progress + min;
+                    mainActivity.setManualExposure(initialIndex);
+                } else {
+                    progress = Math.max(0, Math.min(max - min, storedIndex - min));
+                }
+                
+                exposureSeekBar.setProgress(progress);
+                
+                exposureSeekBar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
+                        if (fromUser) {
+                            int newIndex = progress + min;
+                            mainActivity.setManualExposure(newIndex);
+                        }
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(android.widget.SeekBar seekBar) {}
+
+                    @Override
+                    public void onStopTrackingTouch(android.widget.SeekBar seekBar) {}
+                });
+            } else {
+                // Camera might not be ready yet, retry in a moment
+                mainHandler.postDelayed(this::setupExposureSeekBar, 500);
+            }
+        } else {
+            exposureSeekBar.setVisibility(View.GONE);
         }
     }
 

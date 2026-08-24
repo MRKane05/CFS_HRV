@@ -613,8 +613,19 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                     return;
                 }
 
-                // Check if user wants to use a remembered value
-                if (!ReminderManager.isExposureAutoMode(this)) {
+                int mode = ReminderManager.getExposureMode(this);
+
+                // USER Mode: Immediately apply user's manual setting
+                if (mode == ReminderManager.EXPOSURE_MODE_USER) {
+                    int userIndex = ReminderManager.getUserExposureIndex(this);
+                    camera.getCameraControl().setExposureCompensationIndex(userIndex);
+                    Log.d(TAG, "Using user-defined exposure index: " + userIndex);
+                    Toast.makeText(this, "Using manual exposure level", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // REMEMBERED Mode: Use the winner from the last automatic sweep
+                if (mode == ReminderManager.EXPOSURE_MODE_REMEMBERED) {
                     int storedIndex = ReminderManager.getStoredExposureIndex(this);
                     camera.getCameraControl().setExposureCompensationIndex(storedIndex);
                     Log.d(TAG, "Using remembered exposure index: " + storedIndex);
@@ -706,6 +717,20 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 exposureSettlingFrames = SETTLING_DELAY_FRAMES;
             }
         }
+    }
+
+    public void setManualExposure(int index) {
+        if (camera != null) {
+            camera.getCameraControl().setExposureCompensationIndex(index);
+            ReminderManager.setUserExposureIndex(this, index);
+        }
+    }
+
+    public android.util.Range<Integer> getExposureRange() {
+        if (camera != null) {
+            return camera.getCameraInfo().getExposureState().getExposureCompensationRange();
+        }
+        return new android.util.Range<>(0, 0);
     }
 
     private double dcG_fallback = 0;

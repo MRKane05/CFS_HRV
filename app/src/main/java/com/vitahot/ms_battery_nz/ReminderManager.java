@@ -13,9 +13,13 @@ public class ReminderManager {
 
     private static final String PREFS_NAME = "reminder_prefs";
     private static final String REMINDER_TIME_KEY = "reminder_time";
+    private static final String MORNING_REMINDER_TIME_KEY = "morning_reminder_time";
     private static final int REMINDER_REQUEST_CODE = 100;
+    private static final int MORNING_REMINDER_REQUEST_CODE = 101;
     private static final String TAG = "ReminderManager";
     private static final String PROMPT_SHOWN_KEY = "reminder_prompt_shown";
+    private static final String MORNING_PROMPT_SHOWN_KEY = "morning_reminder_prompt_shown";
+    private static final String SYMPTOMS_VISIT_COUNT_KEY = "symptoms_visit_count";
     private static final String SETUP_PENDING_KEY = "reminder_setup_pending";
     private static final String WELCOME_SHOWN_KEY = "welcome_notice_shown";
     private static final String SYMPTOMS_NOTICE_SHOWN_KEY = "symptoms_notice_shown";
@@ -68,6 +72,27 @@ public class ReminderManager {
         prefs.edit().putBoolean(POSITION_NOTICE_SHOWN_KEY, true).apply();
     }
 
+    public static int getSymptomsVisitCount(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getInt(SYMPTOMS_VISIT_COUNT_KEY, 0);
+    }
+
+    public static void incrementSymptomsVisitCount(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        int count = prefs.getInt(SYMPTOMS_VISIT_COUNT_KEY, 0);
+        prefs.edit().putInt(SYMPTOMS_VISIT_COUNT_KEY, count + 1).apply();
+    }
+
+    public static boolean hasMorningPromptBeenShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(MORNING_PROMPT_SHOWN_KEY, false);
+    }
+
+    public static void setMorningPromptShown(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(MORNING_PROMPT_SHOWN_KEY, true).apply();
+    }
+
     public static int getExposureMode(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         // Default to AUTO (0)
@@ -116,19 +141,30 @@ public class ReminderManager {
         prefs.edit().putInt(REMINDER_TIME_KEY, hourOfDay * 60 + minute).apply();
         prefs.edit().putBoolean(SETUP_PENDING_KEY, false).apply(); // Clear pending on success
 
-        scheduleReminder(context, hourOfDay, minute);
+        scheduleReminder(context, hourOfDay, minute, REMINDER_REQUEST_CODE);
     }
 
-    public static void scheduleReminder(Context context, int hourOfDay, int minute) {
-        Log.d(TAG, "scheduleReminder called");
+    public static void setMorningReminder(Context context, int hourOfDay, int minute) {
+        Log.d(TAG, "setMorningReminder called for " + hourOfDay + ":" + String.format("%02d", minute));
+
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putInt(MORNING_REMINDER_TIME_KEY, hourOfDay * 60 + minute).apply();
+
+        scheduleReminder(context, hourOfDay, minute, MORNING_REMINDER_REQUEST_CODE);
+    }
+
+    public static void scheduleReminder(Context context, int hourOfDay, int minute, int requestCode) {
+        Log.d(TAG, "scheduleReminder called for code " + requestCode);
 
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
 
         Intent intent = new Intent(context, ReminderBroadcastReceiver.class);
-        intent.setAction("com.vitahot.ms_battery_nz.DAILY_REMINDER");
+        String action = (requestCode == MORNING_REMINDER_REQUEST_CODE) ?
+                "com.vitahot.ms_battery_nz.MORNING_REMINDER" : "com.vitahot.ms_battery_nz.DAILY_REMINDER";
+        intent.setAction(action);
 
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, REMINDER_REQUEST_CODE, intent,
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Calendar calendar = Calendar.getInstance();
@@ -171,7 +207,14 @@ public class ReminderManager {
         if (time != -1) {
             int hour = time / 60;
             int minute = time % 60;
-            scheduleReminder(context, hour, minute);
+            scheduleReminder(context, hour, minute, REMINDER_REQUEST_CODE);
+        }
+
+        int morningTime = prefs.getInt(MORNING_REMINDER_TIME_KEY, -1);
+        if (morningTime != -1) {
+            int hour = morningTime / 60;
+            int minute = morningTime % 60;
+            scheduleReminder(context, hour, minute, MORNING_REMINDER_REQUEST_CODE);
         }
     }
 
@@ -180,16 +223,33 @@ public class ReminderManager {
         return prefs.getInt(REMINDER_TIME_KEY, -1) != -1;
     }
 
+    public static boolean isMorningReminderSet(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getInt(MORNING_REMINDER_TIME_KEY, -1) != -1;
+    }
+
     public static boolean cancelReminder(Context context) {
+        return cancelReminderByCode(context, REMINDER_REQUEST_CODE);
+    }
+
+    public static boolean cancelMorningReminder(Context context) {
+        return cancelReminderByCode(context, MORNING_REMINDER_REQUEST_CODE);
+    }
+
+    private static boolean cancelReminderByCode(Context context, int requestCode) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return false;
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        boolean wasSet = prefs.getInt(REMINDER_TIME_KEY, -1) != -1;
+        String key = (requestCode == MORNING_REMINDER_REQUEST_CODE) ? MORNING_REMINDER_TIME_KEY : REMINDER_TIME_KEY;
+        boolean wasSet = prefs.getInt(key, -1) != -1;
 
         Intent intent = new Intent(context, ReminderBroadcastReceiver.class);
-        intent.setAction("com.vitahot.ms_battery_nz.DAILY_REMINDER");
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, REMINDER_REQUEST_CODE, intent,
+        String action = (requestCode == MORNING_REMINDER_REQUEST_CODE) ?
+                "com.vitahot.ms_battery_nz.MORNING_REMINDER" : "com.vitahot.ms_battery_nz.DAILY_REMINDER";
+        intent.setAction(action);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent,
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
 
         if (pendingIntent != null) {
@@ -197,8 +257,8 @@ public class ReminderManager {
             pendingIntent.cancel();
         }
 
-        prefs.edit().remove(REMINDER_TIME_KEY).apply();
-        Log.d(TAG, "Reminder cancelled. Was set: " + wasSet);
+        prefs.edit().remove(key).apply();
+        Log.d(TAG, "Reminder cancelled for code " + requestCode + ". Was set: " + wasSet);
         return wasSet;
     }
 }

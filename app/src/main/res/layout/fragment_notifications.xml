@@ -134,4 +134,31 @@
         app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toBottomOf="@id/cancel_reminder_button" />
 
+    <Button
+        android:id="@+id/morning_reminder_button"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:backgroundTint="#384A75"
+        android:text="Set Morning Reminder"
+        android:textColor="#FFCFCFCF"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toBottomOf="@id/exposure_toggle_button" />
+
+    <Button
+        android:id="@+id/cancel_morning_reminder_button"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:backgroundTint="#8B0000"
+        android:text="Cancel Morning Reminder"
+        android:textColor="#FFCFCFCF"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toBottomOf="@id/morning_reminder_button" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>

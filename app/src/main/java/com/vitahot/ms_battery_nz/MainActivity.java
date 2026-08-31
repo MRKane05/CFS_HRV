@@ -539,9 +539,16 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
     }
 
     private void handleIntent(Intent intent) {
-        if (intent != null && "symptoms".equals(intent.getStringExtra("navigate_to"))) {
-            if (bottomNavigationView != null) {
-                bottomNavigationView.setSelectedItemId(R.id.navigation_symptoms);
+        if (intent != null) {
+            String navigateTo = intent.getStringExtra("navigate_to");
+            if ("symptoms".equals(navigateTo)) {
+                if (bottomNavigationView != null) {
+                    bottomNavigationView.setSelectedItemId(R.id.navigation_symptoms);
+                }
+            } else if ("measure".equals(navigateTo)) {
+                if (bottomNavigationView != null) {
+                    bottomNavigationView.setSelectedItemId(R.id.navigation_measure);
+                }
             }
         }
     }
@@ -619,6 +626,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 if (mode == ReminderManager.EXPOSURE_MODE_USER) {
                     int userIndex = ReminderManager.getUserExposureIndex(this);
                     camera.getCameraControl().setExposureCompensationIndex(userIndex);
+                    bestExposureIndex = userIndex; // Anchor for 'lockAtBest'
                     Log.d(TAG, "Using user-defined exposure index: " + userIndex);
                     Toast.makeText(this, "Using manual exposure level", Toast.LENGTH_SHORT).show();
                     return;
@@ -628,6 +636,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 if (mode == ReminderManager.EXPOSURE_MODE_REMEMBERED) {
                     int storedIndex = ReminderManager.getStoredExposureIndex(this);
                     camera.getCameraControl().setExposureCompensationIndex(storedIndex);
+                    bestExposureIndex = storedIndex; // Anchor for 'lockAtBest'
                     Log.d(TAG, "Using remembered exposure index: " + storedIndex);
                     Toast.makeText(this, "Using remembered exposure", Toast.LENGTH_SHORT).show();
                     return; // Skip the sweep
@@ -654,6 +663,15 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
     }
 
     public void stopExposureOptimization(boolean lockAtBest) {
+        if (!isOptimizingExposure) {
+            // If we weren't sweeping (Remembered/User mode), don't touch the hardware
+            // unless explicitly cancelling (lockAtBest=false)
+            if (!lockAtBest && camera != null) {
+                camera.getCameraControl().setExposureCompensationIndex(0);
+            }
+            return;
+        }
+
         isOptimizingExposure = false;
         if (camera != null && lockAtBest && bestVariance > -1000) {
             camera.getCameraControl().setExposureCompensationIndex(bestExposureIndex);

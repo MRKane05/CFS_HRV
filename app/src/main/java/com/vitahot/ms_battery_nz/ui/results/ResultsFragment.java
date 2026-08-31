@@ -27,6 +27,7 @@ public class ResultsFragment extends Fragment {
 
     private HRVDataManager hrvManager;
     private ActivityResultLauncher<String[]> permissionLauncher;
+    private boolean settingMorningReminder = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -94,6 +95,17 @@ public class ResultsFragment extends Fragment {
         Button cancelReminderButton = view.findViewById(R.id.cancel_reminder_button);
         cancelReminderButton.setOnClickListener(v -> cancelReminder());
 
+        // Morning Reminder Button
+        Button morningReminderButton = view.findViewById(R.id.morning_reminder_button);
+        morningReminderButton.setOnClickListener(v -> {
+            settingMorningReminder = true;
+            showReminderDialog();
+        });
+
+        // Cancel Morning Reminder Button
+        Button cancelMorningReminderButton = view.findViewById(R.id.cancel_morning_reminder_button);
+        cancelMorningReminderButton.setOnClickListener(v -> cancelMorningReminder());
+
         // Exposure Toggle Button
         Button exposureButton = view.findViewById(R.id.exposure_toggle_button);
         updateExposureButtonText(exposureButton);
@@ -147,6 +159,15 @@ public class ResultsFragment extends Fragment {
         }
     }
 
+    private void cancelMorningReminder() {
+        boolean removed = ReminderManager.cancelMorningReminder(requireContext());
+        if (removed) {
+            Toast.makeText(getContext(), "Morning reminder has been removed", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getContext(), "There was no morning reminder to remove", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void openPrivacyPolicy() {
         String docUrl = "https://docs.google.com/document/d/YOUR_DOC_ID/edit?usp=sharing";
         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -177,7 +198,7 @@ public class ResultsFragment extends Fragment {
     }
 
     private void showReminderDialog() {
-        android.util.Log.d("ReminderDialog", "showReminderDialog called");
+        android.util.Log.d("ReminderDialog", "showReminderDialog called, morning=" + settingMorningReminder);
 
         List<String> permissionsToRequest = new ArrayList<>();
 
@@ -212,26 +233,38 @@ public class ResultsFragment extends Fragment {
     }
 
     private void showTimePicker() {
-        android.util.Log.d("ReminderDialog", "showTimePicker called");
+        android.util.Log.d("ReminderDialog", "showTimePicker called, morning=" + settingMorningReminder);
 
         try {
             TimePicker timePicker = new TimePicker(getContext());
+            
+            String title = settingMorningReminder ? "Set Morning Reminder" : "Set Daily Reminder";
+            String message = settingMorningReminder ? "What time would you like to record your HRV each morning?" : "What time would you like to be reminded each day?";
 
             new android.app.AlertDialog.Builder(getContext())
-                    .setTitle("Set Daily Reminder")
-                    .setMessage("What time would you like to be reminded each day?")
+                    .setTitle(title)
+                    .setMessage(message)
                     .setView(timePicker)
                     .setPositiveButton("Set Reminder", (dialog, which) -> {
                         int hour = timePicker.getHour();
                         int minute = timePicker.getMinute();
                         android.util.Log.d("ReminderDialog", "Setting reminder for " + hour + ":" + String.format("%02d", minute));
-                        ReminderManager.setDailyReminder(getContext(), hour, minute);
-                        ReminderManager.setPromptShown(requireContext());
-                        Toast.makeText(getContext(), "✓ Daily reminder set for " + hour + ":" +
-                                String.format("%02d", minute), Toast.LENGTH_LONG).show();
+                        
+                        if (settingMorningReminder) {
+                            ReminderManager.setMorningReminder(getContext(), hour, minute);
+                            Toast.makeText(getContext(), "✓ Morning reminder set for " + hour + ":" +
+                                    String.format("%02d", minute), Toast.LENGTH_LONG).show();
+                        } else {
+                            ReminderManager.setDailyReminder(getContext(), hour, minute);
+                            ReminderManager.setPromptShown(requireContext());
+                            Toast.makeText(getContext(), "✓ Daily reminder set for " + hour + ":" +
+                                    String.format("%02d", minute), Toast.LENGTH_LONG).show();
+                        }
+                        settingMorningReminder = false;
                     })
                     .setNegativeButton("Cancel", (dialog, which) -> {
                         ReminderManager.setSetupPending(requireContext(), false);
+                        settingMorningReminder = false;
                     })
                     .show();
 

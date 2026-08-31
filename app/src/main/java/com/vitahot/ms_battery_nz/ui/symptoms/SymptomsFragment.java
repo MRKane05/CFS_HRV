@@ -71,10 +71,15 @@ public class SymptomsFragment extends Fragment {
     private MessageDisplayManager messageManager;
 
     private ActivityResultLauncher<String[]> permissionLauncher;
+    private boolean settingMorningReminder = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Increment visit count for morning reminder prompt
+        ReminderManager.incrementSymptomsVisitCount(requireContext());
+        
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
@@ -91,7 +96,11 @@ public class SymptomsFragment extends Fragment {
                     } else {
                         Toast.makeText(getContext(), "Permissions required to set reminders", Toast.LENGTH_SHORT).show();
                         ReminderManager.setSetupPending(requireContext(), false);
-                        ReminderManager.setPromptShown(requireContext());
+                        if (!settingMorningReminder) {
+                            ReminderManager.setPromptShown(requireContext());
+                        } else {
+                            ReminderManager.setMorningPromptShown(requireContext());
+                        }
                         showInformationPageMessage();
                     }
                 });
@@ -122,6 +131,9 @@ public class SymptomsFragment extends Fragment {
         // Show symptoms notice if it's the first time
         if (!ReminderManager.hasSymptomsNoticeBeenShown(requireContext())) {
             showSymptomsNotice();
+        } else if (ReminderManager.getSymptomsVisitCount(requireContext()) >= 2 
+                && !ReminderManager.hasMorningPromptBeenShown(requireContext())) {
+            showMorningReminderPrompt();
         }
 
 
@@ -381,6 +393,7 @@ public class SymptomsFragment extends Fragment {
                 .setTitle("Daily Reminder")
                 .setMessage("Would you like to set a daily reminder to log your fatigue levels?")
                 .setPositiveButton("Yes", (dialog, which) -> {
+                    settingMorningReminder = false;
                     showReminderDialog();
                 })
                 .setNegativeButton("No", (dialog, which) -> {
@@ -391,10 +404,30 @@ public class SymptomsFragment extends Fragment {
                 .show();
     }
 
+    private void showMorningReminderPrompt() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Morning Reminder")
+                .setMessage("Would you like to set a morning reminder to record your HRV?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    settingMorningReminder = true;
+                    showReminderDialog();
+                })
+                .setNegativeButton("No", (dialog, which) -> {
+                    ReminderManager.setMorningPromptShown(requireContext());
+                    showInformationPageMessage();
+                })
+                .setCancelable(false)
+                .show();
+    }
+
     private void showInformationPageMessage() {
+        String message = settingMorningReminder ? 
+                "You can set or change your morning reminder at any time from the Information page." :
+                "You can set or change your daily reminder at any time from the Information page.";
+        
         new AlertDialog.Builder(getContext())
                 .setTitle("Reminder Settings")
-                .setMessage("You can set or change your daily reminder at any time from the Information page.")
+                .setMessage(message)
                 .setPositiveButton("OK", null)
                 .show();
     }
@@ -442,28 +475,46 @@ public class SymptomsFragment extends Fragment {
     private void showTimePicker() {
         try {
             TimePicker timePicker = new TimePicker(getContext());
+            String title = settingMorningReminder ? "Set Morning Reminder" : "Set Daily Reminder";
+            String message = settingMorningReminder ? "What time would you like to record your HRV each morning?" : "What time would you like to be reminded each day?";
+            
             new AlertDialog.Builder(getContext())
-                    .setTitle("Set Daily Reminder")
-                    .setMessage("What time would you like to be reminded each day?")
+                    .setTitle(title)
+                    .setMessage(message)
                     .setView(timePicker)
                     .setPositiveButton("Set Reminder", (dialog, which) -> {
                         int hour = timePicker.getHour();
                         int minute = timePicker.getMinute();
-                        ReminderManager.setDailyReminder(getContext(), hour, minute);
-                        Toast.makeText(getContext(), "✓ Daily reminder set", Toast.LENGTH_LONG).show();
-                        ReminderManager.setPromptShown(requireContext());
+                        
+                        if (settingMorningReminder) {
+                            ReminderManager.setMorningReminder(getContext(), hour, minute);
+                            ReminderManager.setMorningPromptShown(requireContext());
+                            Toast.makeText(getContext(), "✓ Morning reminder set", Toast.LENGTH_LONG).show();
+                        } else {
+                            ReminderManager.setDailyReminder(getContext(), hour, minute);
+                            ReminderManager.setPromptShown(requireContext());
+                            Toast.makeText(getContext(), "✓ Daily reminder set", Toast.LENGTH_LONG).show();
+                        }
                         showInformationPageMessage();
                     })
                     .setNegativeButton("Cancel", (dialog, which) -> {
                         ReminderManager.setSetupPending(requireContext(), false);
-                        ReminderManager.setPromptShown(requireContext());
+                        if (settingMorningReminder) {
+                            ReminderManager.setMorningPromptShown(requireContext());
+                        } else {
+                            ReminderManager.setPromptShown(requireContext());
+                        }
                         showInformationPageMessage();
                     })
                     .setCancelable(false)
                     .show();
         } catch (Exception e) {
             Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            ReminderManager.setPromptShown(requireContext());
+            if (settingMorningReminder) {
+                ReminderManager.setMorningPromptShown(requireContext());
+            } else {
+                ReminderManager.setPromptShown(requireContext());
+            }
         }
     }
 

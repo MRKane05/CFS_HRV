@@ -116,6 +116,9 @@ public class MeasureFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
+        // Prevent screen from sleeping while on the measurement screen
+        root.setKeepScreenOn(true);
+
         // Initialize UI elements
         progressBar = binding.progressBar;
         previewView = binding.previewView;

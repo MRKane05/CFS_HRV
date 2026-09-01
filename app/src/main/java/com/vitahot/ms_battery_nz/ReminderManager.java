@@ -21,7 +21,7 @@ public class ReminderManager {
     private static final String MORNING_PROMPT_SHOWN_KEY = "morning_reminder_prompt_shown";
     private static final String SYMPTOMS_VISIT_COUNT_KEY = "symptoms_visit_count";
     private static final String SETUP_PENDING_KEY = "reminder_setup_pending";
-    private static final String WELCOME_SHOWN_KEY = "welcome_notice_shown";
+    private static final String WELCOME_SHOWN_KEY = "welcome_notice_shownA";
     private static final String SYMPTOMS_NOTICE_SHOWN_KEY = "symptoms_notice_shown";
     private static final String POSITION_NOTICE_SHOWN_KEY = "position_notice_shown";
     private static final String EXPOSURE_MODE_KEY = "exposure_mode_int";

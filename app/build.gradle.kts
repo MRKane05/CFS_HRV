@@ -19,8 +19,8 @@ android {
         applicationId = "com.vitahot.ms_battery_nz"
         minSdk = 29
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.45"
+        versionCode = 7
+        versionName = "0.55"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

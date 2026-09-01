@@ -111,7 +111,18 @@ public class ResultsFragment extends Fragment {
         updateExposureButtonText(exposureButton);
         exposureButton.setOnClickListener(v -> toggleExposureMode(exposureButton));
 
+        // Linked Article Button
+        Button linkedArticleButton = view.findViewById(R.id.linked_article_button);
+        linkedArticleButton.setOnClickListener(v -> openLinkedArticle());
+
         return view;
+    }
+
+    private void openLinkedArticle() {
+        String articleUrl = "https://pubmed.ncbi.nlm.nih.gov/31906988/";
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(articleUrl));
+        startActivity(intent);
     }
 
     private void toggleExposureMode(Button button) {

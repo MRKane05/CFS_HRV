@@ -435,7 +435,7 @@ public class SymptomsFragment extends Fragment {
     private void showSymptomsNotice() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Setting Symptoms")
-                .setMessage("Please select the level of fatigue you experienced today.\n\nThis is best set at the end of the day based on how you feel. Your fatigue level can be updated at any time, and the data you enter will be used to improve the accuracy of future predictions.")
+                .setMessage("Please select the level of fatigue you experienced today.\n\nThis is best set at the end of the day based on how you feel. Your fatigue level can be updated at any time, and the data you enter will be used to improve the accuracy of future predictions.\n\nNote that there are messages for this section also, and these will further explain this section to you")
                 .setPositiveButton("OK", (dialog, which) -> {
                     ReminderManager.setSymptomsNoticeShown(requireContext());
                 })

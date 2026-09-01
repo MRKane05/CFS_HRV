@@ -102,6 +102,7 @@
         android:layout_height="wrap_content"
         android:backgroundTint="#384A75"
         android:text="Set Daily Reminder"
+        android:layout_marginTop="30dp"
         android:textColor="#FFCFCFCF"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
@@ -125,28 +126,27 @@
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
         android:backgroundTint="#384A75"
+        android:layout_marginTop="30dp"
         android:text="Exposure: Automatic"
         android:textColor="#FFCFCFCF"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintStart_toEndOf="@id/guideline_left"
-        app:layout_constraintTop_toBottomOf="@id/cancel_reminder_button" />
+        app:layout_constraintTop_toBottomOf="@+id/cancel_morning_reminder_button" />
 
     <Button
         android:id="@+id/morning_reminder_button"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
         android:backgroundTint="#384A75"
         android:text="Set Morning Reminder"
         android:textColor="#FFCFCFCF"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintStart_toEndOf="@id/guideline_left"
-        app:layout_constraintTop_toBottomOf="@id/exposure_toggle_button" />
+        app:layout_constraintTop_toBottomOf="@+id/cancel_reminder_button" />
 
     <Button
         android:id="@+id/cancel_morning_reminder_button"
@@ -160,5 +160,19 @@
         app:layout_constraintEnd_toStartOf="@id/guideline_right"
         app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toBottomOf="@id/morning_reminder_button" />
+
+    <Button
+        android:id="@+id/linked_article_button"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:backgroundTint="#384A75"
+        android:text="Linked article"
+        android:textColor="#FFCFCFCF"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@id/guideline_right"
+        app:layout_constraintStart_toEndOf="@id/guideline_left"
+        app:layout_constraintTop_toBottomOf="@id/cancel_morning_reminder_button" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

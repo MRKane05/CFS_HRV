@@ -167,7 +167,8 @@ public class MeasureFragment extends Fragment {
     private void showWelcomeNotice() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Welcome to MS Battery")
-                .setMessage("To begin: start recording your Heart Rate Variability (HRV) data, please press the button below.\n\nIt's best to record this data before you even get out of bed each morning.")
+                .setMessage("To begin: read the cycling messages up top of screen to fully explain things as you go.\n\nThis app is built around taking measurements and mapping these to your fatigue symptoms. Measurements are best taken in the morning.\n\nWhen you have mapped sufficient data the app will try to predict the spoons you'll have in your day.\n\nTo begin press the button below and follow the messages.")
+                //.setMessage("To begin: start recording your Heart Rate Variability (HRV) data, please press the button below.\n\nIt's best to record this data before you even get out of bed each morning.")
                 .setPositiveButton("Got it", (dialog, which) -> {
                     ReminderManager.setWelcomeNoticeShown(requireContext());
                     if (messageManager != null) {

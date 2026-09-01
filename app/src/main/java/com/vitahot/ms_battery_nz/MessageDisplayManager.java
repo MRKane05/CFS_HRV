@@ -15,7 +15,7 @@ public class MessageDisplayManager {
     private int currentMessageIndex = 0;
     private List<String> currentStageMessages;
     private long fadeDuration = 500; // Duration for fade in/out in milliseconds
-    private long displayDuration = 6000; // How long message stays visible
+    private long displayDuration = 9000; // How long message stays visible
 
     // Define messages for each stage
     private List<String> stage1Messages = Arrays.asList(

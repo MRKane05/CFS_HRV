@@ -148,6 +148,8 @@ public class MeasureFragment extends Fragment {
             dataRecordButton();  // Call directly, not through listener
         });
 
+        binding.chartInfoButton.setOnClickListener(v -> showChartInfoDialog());
+
         // Initialize message manager
         messageManager = new MessageDisplayManager(heartRateTextView);
 
@@ -177,6 +179,28 @@ public class MeasureFragment extends Fragment {
                 })
                 .setCancelable(false)
                 .show();
+    }
+
+    private void showChartInfoDialog() {
+        if (getContext() == null) return;
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_chart_info, null);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        Button closeButton = dialogView.findViewById(R.id.chart_info_close_button);
+        if (closeButton != null) {
+            closeButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        dialog.show();
     }
 
     @Override

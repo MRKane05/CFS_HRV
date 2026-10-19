@@ -85,6 +85,7 @@
         android:id="@+id/imageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:contentDescription="@null"
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -100,7 +101,7 @@
         android:layout_marginTop="16dp"
         android:background="#80000000"
         android:padding="8dp"
-        android:text="Information"
+        android:text="@string/information_title"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
@@ -159,6 +160,23 @@
         app:layout_constraintStart_toEndOf="@id/guideline_left"
         app:layout_constraintTop_toBottomOf="@id/guideline_55" />
 
+    <!-- Info button over top right corner of LineChart -->
+    <ImageButton
+        android:id="@+id/chart_info_button"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="6dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/chart_info_button_description"
+        android:elevation="6dp"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintEnd_toEndOf="@id/red_color_chart"
+        app:layout_constraintTop_toTopOf="@id/red_color_chart"
+        app:srcCompat="@drawable/ic_info"
+        app:tint="#FFFFFF" />
+
     <!-- Measure button - positioned from 78% to bottom -->
     <Button
         android:id="@+id/measure_button"
@@ -167,7 +185,7 @@
         android:layout_height="0dp"
         android:backgroundTint="#384A75"
         android:elegantTextHeight="false"
-        android:text="Tap to Begin"
+        android:text="@string/tap_to_begin"
         android:textColor="#FFCFCFCF"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/guideline_right"

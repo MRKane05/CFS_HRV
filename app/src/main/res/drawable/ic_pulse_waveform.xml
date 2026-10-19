@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="100dp"
+    android:viewportWidth="200"
+    android:viewportHeight="100">
+    <!-- Grid line background -->
+    <path
+        android:strokeColor="#2C4A6F"
+        android:strokeWidth="1"
+        android:pathData="M 0,25 L 200,25 M 0,50 L 200,50 M 0,75 L 200,75" />
+    <!-- Pulse waveform path -->
+    <path
+        android:strokeColor="#FF5252"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 0,60 Q 15,60 20,55 T 30,20 T 40,80 T 50,50 T 60,60 L 80,60 Q 95,60 100,55 T 110,20 T 120,80 T 130,50 T 140,60 L 160,60 Q 175,60 180,55 T 190,20 T 200,80" />
+</vector>

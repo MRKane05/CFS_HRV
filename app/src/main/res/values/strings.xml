@@ -3,4 +3,10 @@
     <string name="title_home">home</string>
     <string name="title_dashboard">dashboard</string>
     <string name="title_notifications">notifications</string>
+    <string name="information_title">Information</string>
+    <string name="tap_to_begin">Tap to Begin</string>
+    <string name="chart_info_button_description">Good expected measure info</string>
+    <string name="chart_info_title">Good Expected Measure</string>
+    <string name="chart_info_message">What you should see in the LineChart:\n\n• A clear, consistent signal pattern with distinct periodic peaks.\n• Minimal high-frequency noise or flatlining.\n• Smooth pulse waves when your finger is correctly positioned over the camera lens and flash light.</string>
+    <string name="close">Close</string>
 </resources>

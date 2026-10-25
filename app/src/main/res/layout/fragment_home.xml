@@ -165,8 +165,6 @@
         android:id="@+id/chart_info_button"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="6dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/chart_info_button_description"
         android:elevation="6dp"
@@ -175,7 +173,7 @@
         app:layout_constraintEnd_toEndOf="@id/red_color_chart"
         app:layout_constraintTop_toTopOf="@id/red_color_chart"
         app:srcCompat="@drawable/ic_info"
-        app:tint="#FFFFFF" />
+        app:tint="#384A74" />
 
     <!-- Measure button - positioned from 78% to bottom -->
     <Button

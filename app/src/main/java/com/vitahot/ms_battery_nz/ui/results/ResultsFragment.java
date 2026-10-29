@@ -85,7 +85,7 @@ public class ResultsFragment extends Fragment {
 
         // Delete Data Button
         Button deleteButton = view.findViewById(R.id.delete_data_button);
-        deleteButton.setOnClickListener(v -> deleteUserData());
+        deleteButton.setOnClickListener(v -> confirmDeleteUserData());
 
         // Reminder Button
         Button reminderButton = view.findViewById(R.id.reminder_button);
@@ -119,7 +119,7 @@ public class ResultsFragment extends Fragment {
     }
 
     private void openLinkedArticle() {
-        String articleUrl = "https://pubmed.ncbi.nlm.nih.gov/31906988/";
+        String articleUrl = "https://docs.google.com/document/d/1NRKtTAOSsKperPQkSGIfSrqJvzRtcQ6jANtP9_8_P3s/edit?usp=sharing";
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(articleUrl));
         startActivity(intent);
@@ -184,6 +184,17 @@ public class ResultsFragment extends Fragment {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(docUrl));
         startActivity(intent);
+    }
+
+    private void confirmDeleteUserData() {
+        if (getContext() == null) return;
+
+        new android.app.AlertDialog.Builder(getContext())
+                .setTitle(R.string.delete_data_confirm_title)
+                .setMessage(R.string.delete_data_confirm_message)
+                .setPositiveButton(R.string.yes, (dialog, which) -> deleteUserData())
+                .setNegativeButton(R.string.no, (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void deleteUserData() {

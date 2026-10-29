@@ -9,5 +9,9 @@
     <string name="chart_info_title">About the PPG Waveform</string>
     <string name="chart_info_message_clean">Place your finger over the phone LED and camera and try to match the PPG Wave shown below:\n• Try adjusting how you hold your phone to get a better signal\n• Try adjusting pressure to see what gives the best results\n• Line should be smooth without sharp jumps</string>
     <string name="chart_info_message">Data isn\'t always perfect, the images below is quite noisy containing sharp points on the curve, or jumps where the app couldn\'t read the PPG:\n• Some phones simply record better data than others\n• The system is made to handle dips and bumps\n• The core thing is that your recordings are consistent between sessions</string>
+    <string name="delete_data_confirm_title">Delete All Data</string>
+    <string name="delete_data_confirm_message">This will delete all your data. Are you sure?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="close">Close</string>
 </resources>

@@ -20,7 +20,7 @@ public class FatigueLevelPredictor {
         // Filter out any invalid historical data
         List<HRVData> validHistoricalData = historicalData.stream()
                 .filter(data -> data.getFatigueLevel() >= 1 && data.getFatigueLevel() <= 5)
-                .filter(data -> data.getRmssd() > 0 && data.getHeartRate() > 0)
+                .filter(data -> data.getFittedRmssd() > 0 && data.getHeartRate() > 0)
                 .collect(Collectors.toList());
 
         if (validHistoricalData.isEmpty()) {
@@ -34,7 +34,7 @@ public class FatigueLevelPredictor {
 
         for (HRVData data : validHistoricalData) {
             int fatigueLevel = data.getFatigueLevel();
-            avgRmssdByFatigue[fatigueLevel] += data.getRmssd();
+            avgRmssdByFatigue[fatigueLevel] += data.getFittedRmssd();
             //avgHRByFatigue[fatigueLevel] += data.getHeartRate();
             countByFatigue[fatigueLevel]++;
         }
@@ -55,7 +55,7 @@ public class FatigueLevelPredictor {
             if (countByFatigue[fatigueLevel] == 0) continue;
 
             // Calculate weighted distance (RMSSD weighted more heavily based on observed correlation)
-            double rmssdDiff = Math.abs(newMeasurement.getRmssd() - avgRmssdByFatigue[fatigueLevel]);
+            double rmssdDiff = Math.abs(newMeasurement.getFittedRmssd() - avgRmssdByFatigue[fatigueLevel]);
             //double hrDiff = Math.abs(newMeasurement.getHeartRate() - avgHRByFatigue[fatigueLevel]);
 
             // Weight RMSSD more heavily since it showed stronger correlation
@@ -146,7 +146,7 @@ public class FatigueLevelPredictor {
         // Filter out any invalid historical data
         List<HRVData> validHistoricalData = historicalData.stream()
                 .filter(data -> data.getFatigueLevel() >= 1 && data.getFatigueLevel() <= 5)
-                .filter(data -> data.getRmssd() > 0 && data.getHeartRate() > 0)
+                .filter(data -> data.getFittedRmssd() > 0 && data.getHeartRate() > 0)
                 .collect(Collectors.toList());
 
         if (validHistoricalData.isEmpty()) {
@@ -156,14 +156,14 @@ public class FatigueLevelPredictor {
         double averageRMSSD = 0;
         double averageHR = 0;
         for (HRVData data : validHistoricalData) {
-            averageRMSSD += data.getRmssd();
+            averageRMSSD += data.getFittedRmssd();
             averageHR += data.getHeartRate();
         }
 
         averageRMSSD /= validHistoricalData.size();
         averageHR /= validHistoricalData.size();
 
-        return  ((newMeasurement.getRmssd() / averageRMSSD) * 0.7) + ((newMeasurement.getHeartRate() / averageHR) * 0.3);
+        return  ((newMeasurement.getFittedRmssd() / averageRMSSD) * 0.7) + ((newMeasurement.getHeartRate() / averageHR) * 0.3);
     }
 
         //Range string approach
@@ -181,7 +181,7 @@ public class FatigueLevelPredictor {
         // Filter out any invalid historical data
         List<HRVData> validHistoricalData = historicalData.stream()
                 .filter(data -> data.getFatigueLevel() >= 1 && data.getFatigueLevel() <= 5)
-                .filter(data -> data.getRmssd() > 0 && data.getHeartRate() > 0)
+                .filter(data -> data.getFittedRmssd() > 0 && data.getHeartRate() > 0)
                 .collect(Collectors.toList());
 
         if (validHistoricalData.isEmpty()) {
@@ -195,7 +195,7 @@ public class FatigueLevelPredictor {
 
         for (HRVData data : validHistoricalData) {
             int fatigueLevel = data.getFatigueLevel();
-            avgRmssdByFatigue[fatigueLevel] += data.getRmssd();
+            avgRmssdByFatigue[fatigueLevel] += data.getFittedRmssd();
             //avgHRByFatigue[fatigueLevel] += data.getHeartRate();
             countByFatigue[fatigueLevel]++;
         }
@@ -218,7 +218,7 @@ public class FatigueLevelPredictor {
             if (countByFatigue[fatigueLevel] == 0) continue;
 
             // Calculate weighted distance (RMSSD weighted more heavily based on observed correlation)
-            double rmssdDiff = Math.abs(newMeasurement.getRmssd() - avgRmssdByFatigue[fatigueLevel]);
+            double rmssdDiff = Math.abs(newMeasurement.getFittedRmssd() - avgRmssdByFatigue[fatigueLevel]);
             //double hrDiff = Math.abs(newMeasurement.getHeartRate() - avgHRByFatigue[fatigueLevel]);
 
             // Weight RMSSD more heavily since it showed stronger correlation

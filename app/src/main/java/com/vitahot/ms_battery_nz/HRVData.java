@@ -11,6 +11,7 @@ public class HRVData {
     private double meanRR;
     private double sdnn;
     private double rmssd;
+    private double fittedRmssd;
     private double pnn50;
     private double heartRate;
     private int validBeats;
@@ -28,9 +29,15 @@ public class HRVData {
 
     public HRVData(double meanRR, double sdnn, double rmssd, double pnn50,
                    double heartRate, int validBeats, int fatigueLevel, int headacheLevel) {
+        this(meanRR, sdnn, rmssd, rmssd, pnn50, heartRate, validBeats, fatigueLevel, headacheLevel);
+    }
+
+    public HRVData(double meanRR, double sdnn, double rmssd, double fittedRmssd, double pnn50,
+                   double heartRate, int validBeats, int fatigueLevel, int headacheLevel) {
         this.meanRR = meanRR;
         this.sdnn = sdnn;
         this.rmssd = rmssd;
+        this.fittedRmssd = fittedRmssd;
         this.pnn50 = pnn50;
         this.heartRate = heartRate;
         this.validBeats = validBeats;
@@ -52,6 +59,7 @@ public class HRVData {
     public double getMeanRR() { return meanRR; }
     public double getSdnn() { return sdnn; }
     public double getRmssd() { return rmssd; }
+    public double getFittedRmssd() { return fittedRmssd == 0 ? rmssd : fittedRmssd; }
     public double getPnn50() { return pnn50; }
     public double getHeartRate() { return heartRate; }
     public int getValidBeats() { return validBeats; }
@@ -66,6 +74,7 @@ public class HRVData {
     public void setMeanRR(double meanRR) { this.meanRR = meanRR; }
     public void setSdnn(double sdnn) { this.sdnn = sdnn; }
     public void setRmssd(double rmssd) { this.rmssd = rmssd; }
+    public void setFittedRmssd(double fittedRmssd) { this.fittedRmssd = fittedRmssd; }
     public void setPnn50(double pnn50) { this.pnn50 = pnn50; }
     public void setHeartRate(double heartRate) { this.heartRate = heartRate; }
     public void setValidBeats(int validBeats) { this.validBeats = validBeats; }

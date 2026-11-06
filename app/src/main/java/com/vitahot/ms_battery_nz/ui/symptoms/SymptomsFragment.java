@@ -28,6 +28,8 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.vitahot.ms_battery_nz.FatigueLevelPredictor;
 import com.vitahot.ms_battery_nz.ForestDataPoint;
+
+import java.util.Locale;
 import com.vitahot.ms_battery_nz.HRVBaselineAnalyzer;
 import com.vitahot.ms_battery_nz.HRVData;
 import com.vitahot.ms_battery_nz.HRVDataManager;
@@ -278,8 +280,9 @@ public class SymptomsFragment extends Fragment {
 
         if (allHRVData.size() < 3) {
             predictionString = "Need to gather " + (3 - allHRVData.size()) + " more days worth of data to make a predication\n";
-            predictionString += "RMSSD: " +  String.format("%.2f",dataEntry.getRmssd()) + "\n";
-            predictionString += "Heart Rate: " +  String.format("%.1f",dataEntry.getHeartRate()) + "\n";
+            predictionString += "RMSSD (Standard): " + String.format(Locale.getDefault(), "%.2f", dataEntry.getRmssd()) + " ms\n";
+            predictionString += "RMSSD (Curve-Fitted): " + String.format(Locale.getDefault(), "%.2f", dataEntry.getFittedRmssd()) + " ms\n";
+            predictionString += "Heart Rate: " + String.format(Locale.getDefault(), "%.1f", dataEntry.getHeartRate()) + "\n";
             predictionString += "Valid Beats: " + dataEntry.getValidBeats() + "\n";
             return predictionString;
         }
@@ -288,7 +291,7 @@ public class SymptomsFragment extends Fragment {
         for (int i=0; i< allHRVData.size()-1; i++) {    //Grab all our data apart from todays entry for a test
             //double sdnn, double rmssd, double pnn50, double fatigueLevel
             HRVData hv_dataEntry = allHRVData.get(i);
-            ForestDataPoint newForestPoint = new ForestDataPoint(hv_dataEntry.getSdnn(), hv_dataEntry.getRmssd(),
+            ForestDataPoint newForestPoint = new ForestDataPoint(hv_dataEntry.getSdnn(), hv_dataEntry.getFittedRmssd(),
                     hv_dataEntry.getPnn50(), hv_dataEntry.getFatigueLevel());
             historicalData.add(newForestPoint);
             historicHRV.add(hv_dataEntry);
@@ -310,8 +313,9 @@ public class SymptomsFragment extends Fragment {
         predictionString += "\n";
         //Add in details from this reading:
         predictionString += "Measurements:\n";
-        predictionString += "RMSSD: " +  String.format("%.2f",dataEntry.getRmssd()) + "\n";
-        predictionString += "Heart Rate: " +  String.format("%.1f",dataEntry.getHeartRate()) + "\n";
+        predictionString += "RMSSD (Standard): " + String.format(Locale.getDefault(), "%.2f", dataEntry.getRmssd()) + " ms\n";
+        predictionString += "RMSSD (Curve-Fitted): " + String.format(Locale.getDefault(), "%.2f", dataEntry.getFittedRmssd()) + " ms\n";
+        predictionString += "Heart Rate: " + String.format(Locale.getDefault(), "%.1f", dataEntry.getHeartRate()) + "\n";
         predictionString += "Valid Beats: " + dataEntry.getValidBeats() + "\n";
 
         return predictionString;

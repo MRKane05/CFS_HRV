@@ -61,7 +61,7 @@
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/chart_info_cleanppgdescription"
-            app:srcCompat="@drawable/goodwaveform_clipped" />
+            app:srcCompat="@drawable/goodwaveform_titles" />
 
         <TextView
             android:id="@+id/chart_info_description"
@@ -89,7 +89,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/chart_info_description"
-            app:srcCompat="@drawable/poorwaveform" />
+            app:srcCompat="@drawable/poorwaveform_titles" />
 
         <!-- Close Button -->
         <Button

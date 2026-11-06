@@ -378,7 +378,7 @@ public class MeasureFragment extends Fragment {
 
                 //MainActivity mainActivity = (MainActivity) getActivity();
                 HRVMeasurementSystem.HRVMetrics results =
-                        HRVMeasurementSystem.analyzeHRV(mainActivity.dataPointList, 30);
+                        HRVMeasurementSystem.analyzeHRV(mainActivity.dataPointList, mainActivity != null ? mainActivity.activeCameraFps : 30.0);
                 /*
                 HRVDataManager hrvManager = new HRVDataManager(getContext());
                 hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
@@ -423,11 +423,12 @@ public class MeasureFragment extends Fragment {
 
     public  void saveResultsToDatabase() {
         MainActivity mainActivity = (MainActivity) getActivity();
+        double fps = (mainActivity != null) ? mainActivity.activeCameraFps : 30.0;
         HRVMeasurementSystem.HRVMetrics results =
-                HRVMeasurementSystem.analyzeHRV(mainActivity.dataPointList, 30);
+                HRVMeasurementSystem.analyzeHRV(mainActivity.dataPointList, fps);
 
         HRVDataManager hrvManager = new HRVDataManager(getContext());
-        hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.pnn50,
+        hrvManager.setTodaysHRVData(results.meanRR, results.sdnn, results.rmssd, results.fittedRmssd, results.pnn50,
                 results.heartRate, results.validBeats);
 
         if (heartRateTextView != null) {

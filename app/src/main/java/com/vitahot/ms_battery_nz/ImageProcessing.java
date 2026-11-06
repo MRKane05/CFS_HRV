@@ -11,48 +11,64 @@ import java.nio.ByteBuffer;
 
 public class ImageProcessing {
 
-    public static double processImageFromYPlane(ImageProxy imageProxy) {
+    /**
+     * Extracts pure Green channel average from YUV_420_888 ImageProxy.
+     * Hemoglobin in blood has an optimal absorption peak in Green light (~530nm),
+     * providing superior PPG signal-to-noise ratio compared to Y-luminance.
+     */
+    public static double processImageForGreenChannel(ImageProxy imageProxy) {
         @OptIn(markerClass = ExperimentalGetImage.class) Image image = imageProxy.getImage();
         if (image == null) {
-            return 0;
+            return 0.0;
         }
 
         try {
-            Image.Plane yPlane = image.getPlanes()[0]; // Y plane is always at index 0
+            Image.Plane yPlane = image.getPlanes()[0];
+            Image.Plane uPlane = image.getPlanes()[1];
+            Image.Plane vPlane = image.getPlanes()[2];
 
-            ByteBuffer buffer = yPlane.getBuffer();
+            ByteBuffer yBuf = yPlane.getBuffer();
+            ByteBuffer uBuf = uPlane.getBuffer();
+            ByteBuffer vBuf = vPlane.getBuffer();
+
             int width = image.getWidth();
             int height = image.getHeight();
-            int rowStride = yPlane.getRowStride();
+            int yRowStride = yPlane.getRowStride();
+            int uvRowStride = uPlane.getRowStride();
+            int uvPixelStride = uPlane.getPixelStride();
 
-            // Sum the Y values across a sampled region (for performance)
-            long totalY = 0;
+            long totalGreen = 0;
             int sampleCount = 0;
 
-            // Use a small grid sampling instead of every pixel to keep performance reasonable
-            int stepDivisor = 20;
-            int stepX = width / stepDivisor;
-            int stepY = height / stepDivisor;
+            int step = 20;
+            for (int y = 0; y < height; y += step) {
+                for (int x = 0; x < width; x += step) {
+                    int yIdx = y * yRowStride + x;
+                    int uvIdx = (y / 2) * uvRowStride + (x / 2) * uvPixelStride;
 
-            for (int y = 0; y < height; y += stepY) {
-                for (int x = 0; x < width; x += stepX) {
-                    int index = y * rowStride + x;
-                    if (index < buffer.capacity()) {
-                        int luminance = buffer.get(index) & 0xFF; // Convert unsigned byte to int
-                        totalY += luminance;
-                        sampleCount++;
-                    }
+                    if (yIdx >= yBuf.capacity() || uvIdx >= uBuf.capacity() || uvIdx >= vBuf.capacity()) continue;
+
+                    int yVal = yBuf.get(yIdx) & 0xFF;
+                    int uVal = (uBuf.get(uvIdx) & 0xFF) - 128;
+                    int vVal = (vBuf.get(uvIdx) & 0xFF) - 128;
+
+                    // YUV to Green channel conversion: G = Y - 0.337633*U - 0.698001*V
+                    int g = (int) (yVal - 0.337633 * uVal - 0.698001 * vVal);
+                    totalGreen += Math.max(0, Math.min(255, g));
+                    sampleCount++;
                 }
             }
 
-            double averageLuminance = sampleCount > 0 ? (double) totalY / sampleCount : 0f;
-
-            return averageLuminance;
+            return sampleCount > 0 ? (double) totalGreen / sampleCount : 0.0;
         } catch (Exception e) {
-            Log.e("LUMINANCE", "Error reading Y plane", e);
+            Log.e("GREEN_CHANNEL", "Error processing Green channel", e);
+            return 0.0;
         } finally {
-            imageProxy.close(); // Very important: must close to avoid memory leak
+            imageProxy.close();
         }
-        return 0;
+    }
+
+    public static double processImageFromYPlane(ImageProxy imageProxy) {
+        return processImageForGreenChannel(imageProxy);
     }
 }

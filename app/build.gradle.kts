@@ -19,8 +19,8 @@ android {
         applicationId = "com.vitahot.ms_battery_nz"
         minSdk = 29
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.58"
+        versionCode = 9
+        versionName = "0.60"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,7 +32,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

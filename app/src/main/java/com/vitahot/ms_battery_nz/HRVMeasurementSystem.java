@@ -18,20 +18,17 @@ public class HRVMeasurementSystem {
     public static class HRVMetrics {
         public double meanRR;      // Mean R-R interval (ms)
         public double sdnn;        // Standard deviation of R-R intervals
-        public double rmssd;       // Root mean square of successive differences
+        public double rmssd;       // Root mean square of successive differences (standard discrete)
+        public double fittedRmssd; // Sub-sample curve-fitted RMSSD
         public double pnn50;       // Percentage of successive R-R intervals differing by >50ms
         public double heartRate;   // Average heart rate (BPM)
         public int validBeats;     // Number of valid beats detected
 
         @Override
         public String toString() {
-            return String.format("HR: %.1f BPM, Valid beats: %d\nRMSSD: %.1f ms",
-                    heartRate, validBeats, rmssd);
-            /*
-            return String.format("HR: %.1f BPM, SDNN: %.1f ms, RMSSD: %.1f ms, pNN50: %.1f%%, Valid beats: %d",
-                    heartRate, sdnn, rmssd, pnn50, validBeats);
-
-             */
+            return String.format(Locale.getDefault(),
+                    "HR: %.1f BPM, Valid beats: %d\nRMSSD (Standard): %.1f ms\nRMSSD (Fitted): %.1f ms",
+                    heartRate, validBeats, rmssd, fittedRmssd);
         }
     }
 
@@ -49,7 +46,16 @@ public class HRVMeasurementSystem {
         List<Long> cleanRRIntervals = cleanRRIntervals(rrIntervals);
 
         // Step 4: Calculate HRV metrics
-        return calculateHRVMetrics(cleanRRIntervals);
+        HRVMetrics metrics = calculateHRVMetrics(cleanRRIntervals);
+
+        // Step 5: Sub-sample curve fitting calculation for enhanced temporal precision
+        List<Double> subSampleTimestamps = getSubSampleTroughTimestamps(filteredData, troughs);
+        metrics.fittedRmssd = calculateFittedRMSSD(subSampleTimestamps);
+        if (metrics.fittedRmssd == 0) {
+            metrics.fittedRmssd = metrics.rmssd; // Fallback
+        }
+
+        return metrics;
     }
 
     /**
@@ -319,6 +325,82 @@ public class HRVMeasurementSystem {
         }
 
         return metrics;
+    }
+
+    /**
+     * Calculates sub-sample interpolated timestamps using parabolic curve fitting
+     */
+    private static List<Double> getSubSampleTroughTimestamps(List<DataPoint> data, List<Integer> troughIndices) {
+        List<Double> subSampleTimestamps = new ArrayList<>();
+        if (data == null || troughIndices == null) return subSampleTimestamps;
+
+        for (int idx : troughIndices) {
+            if (idx > 0 && idx < data.size() - 1) {
+                double yPrev = data.get(idx - 1).value;
+                double yCurr = data.get(idx).value;
+                double yNext = data.get(idx + 1).value;
+
+                double denom = (yNext - 2.0 * yCurr + yPrev);
+                double deltaX = 0.0;
+                if (Math.abs(denom) > 1e-6) {
+                    deltaX = -(yNext - yPrev) / (2.0 * denom);
+                    deltaX = Math.max(-1.0, Math.min(1.0, deltaX));
+                }
+
+                long tCurr = data.get(idx).timestamp;
+                long tOther = (deltaX >= 0) ? data.get(idx + 1).timestamp : data.get(idx - 1).timestamp;
+                double dt = Math.abs(tOther - tCurr);
+                if (dt == 0) dt = 33.333;
+
+                double fittedTimestamp = tCurr + (deltaX * dt);
+                subSampleTimestamps.add(fittedTimestamp);
+            } else if (idx >= 0 && idx < data.size()) {
+                subSampleTimestamps.add((double) data.get(idx).timestamp);
+            }
+        }
+
+        return subSampleTimestamps;
+    }
+
+    /**
+     * Calculates RMSSD using sub-sample curve-fitted timestamps
+     */
+    private static double calculateFittedRMSSD(List<Double> subSampleTimestamps) {
+        if (subSampleTimestamps == null || subSampleTimestamps.size() < 2) return 0;
+
+        List<Double> rrIntervals = new ArrayList<>();
+        for (int i = 1; i < subSampleTimestamps.size(); i++) {
+            double interval = subSampleTimestamps.get(i) - subSampleTimestamps.get(i - 1);
+            if (interval >= 300 && interval <= 2000) {
+                rrIntervals.add(interval);
+            }
+        }
+
+        if (rrIntervals.size() < 2) return 0;
+
+        double mean = rrIntervals.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        double std = Math.sqrt(rrIntervals.stream()
+                .mapToDouble(rr -> Math.pow(rr - mean, 2))
+                .average().orElse(0));
+
+        List<Double> cleaned = new ArrayList<>();
+        for (Double rr : rrIntervals) {
+            if (Math.abs(rr - mean) <= stdRange * std) {
+                cleaned.add(rr);
+            }
+        }
+
+        if (cleaned.size() < 2) return 0;
+
+        double sumSquaredDiffs = 0;
+        int count = 0;
+        for (int i = 1; i < cleaned.size(); i++) {
+            double diff = cleaned.get(i) - cleaned.get(i - 1);
+            sumSquaredDiffs += diff * diff;
+            count++;
+        }
+
+        return Math.sqrt(sumSquaredDiffs / count);
     }
 
     /**

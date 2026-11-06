@@ -52,6 +52,11 @@ public class HRVDataManager {
      */
     public void setTodaysHRVData(double meanRR, double sdnn, double rmssd, double pnn50,
                                  double heartRate, int validBeats) {
+        setTodaysHRVData(meanRR, sdnn, rmssd, rmssd, pnn50, heartRate, validBeats);
+    }
+
+    public void setTodaysHRVData(double meanRR, double sdnn, double rmssd, double fittedRmssd, double pnn50,
+                                 double heartRate, int validBeats) {
         String today = getCurrentDateString();
 
         // Check if entry for today already exists
@@ -62,13 +67,14 @@ public class HRVDataManager {
             existingData.setMeanRR(meanRR);
             existingData.setSdnn(sdnn);
             existingData.setRmssd(rmssd);
+            existingData.setFittedRmssd(fittedRmssd);
             existingData.setPnn50(pnn50);
             existingData.setHeartRate(heartRate);
             existingData.setValidBeats(validBeats);
             existingData.setTimestamp(System.currentTimeMillis());
         } else {
             // Create new entry with default fatigue level of 0
-            HRVData newData = new HRVData(meanRR, sdnn, rmssd, pnn50, heartRate, validBeats, 0, 0);
+            HRVData newData = new HRVData(meanRR, sdnn, rmssd, fittedRmssd, pnn50, heartRate, validBeats, 0, 0);
 
             //Grab an estimate of fatigue to kick off with seeing as we're adding a new entry
             int fatigueEstimate = FatigueLevelPredictor.predictFatigueLevel(getAllData(), newData);

@@ -3,6 +3,8 @@ package com.vitahot.ms_battery_nz;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.camera2.interop.Camera2Interop;
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ExperimentalGetImage;
@@ -14,6 +16,11 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
+import android.util.Range;
 
 import android.content.Context;
 import android.content.Intent;
@@ -111,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
     // Sampling configuration
     private static final float START_SAMPLING_DELAY = 1000; //3 second delay to begin with
     private static final long SAMPLE_INTERVAL_MS = (long) 33.33333333; // Process frames every 100ms
+    public double activeCameraFps = 30.0;
     private static final int SAMPLE_WIDTH = 10; // Sample width for grid
     private static final int SAMPLE_HEIGHT = 10; // Sample height for grid
 
@@ -370,6 +378,49 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
         stopExposureOptimization(false);
     }
 
+    @OptIn(markerClass = ExperimentalCamera2Interop.class)
+    private int detectAndConfigureFps(ImageAnalysis.Builder builder) {
+        int targetFps = 30;
+        try {
+            // Set lower target resolution (640x480 VGA) to allow camera HAL to unlock 60 FPS
+            builder.setTargetResolution(new android.util.Size(640, 480));
+
+            CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            if (cameraManager != null) {
+                for (String cameraId : cameraManager.getCameraIdList()) {
+                    CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+                    Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                    if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                        Range<Integer>[] fpsRanges = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                        Range<Integer> bestRange = null;
+
+                        if (fpsRanges != null) {
+                            for (Range<Integer> range : fpsRanges) {
+                                if (range.getUpper() >= 60) {
+                                    targetFps = 60;
+                                    if (bestRange == null || range.getLower() > bestRange.getLower()) {
+                                        bestRange = range;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (targetFps == 60) {
+                            Camera2Interop.Extender<ImageAnalysis> extender = new Camera2Interop.Extender<>(builder);
+                            extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                                    bestRange != null ? bestRange : new Range<>(60, 60));
+                        }
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking camera FPS capabilities", e);
+            targetFps = 30;
+        }
+        return targetFps;
+    }
+
     private void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
                 ProcessCameraProvider.getInstance(this);
@@ -382,16 +433,25 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                 preview = new Preview.Builder().build();
                 if (previewView != null) {
                     preview.setSurfaceProvider(previewView.getSurfaceProvider());
-                    // Preview - now a member variable
                     if (previewView != null) {
                         preview.setSurfaceProvider(previewView.getSurfaceProvider());
                     }
                 }
 
                 // Image analysis use case
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
+                ImageAnalysis.Builder imageAnalysisBuilder = new ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST);
+
+                int fps = detectAndConfigureFps(imageAnalysisBuilder);
+                activeCameraFps = fps;
+                long sampleInterval = (fps >= 60) ? 14L : 30L;
+
+                ImageAnalysis imageAnalysis = imageAnalysisBuilder.build();
+
+                Toast.makeText(MainActivity.this,
+                        "Camera sample rate set to " + fps + " FPS (" +
+                        (fps >= 60 ? "60 FPS High Performance" : "30 FPS Standard") + ")",
+                        Toast.LENGTH_LONG).show();
 
                 imageAnalysis.setAnalyzer(cameraExecutor, new ImageAnalysis.Analyzer() {
                     @Override
@@ -400,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
                         long start_delay = currentTime - start_Time;
 
                         // Only process frames at specified interval to maintain performance
-                        if (currentTime - lastProcessedTime >= SAMPLE_INTERVAL_MS && start_delay > 500L) {
+                        if (currentTime - lastProcessedTime >= sampleInterval && start_delay > 500L) {
                             if (isCameraReady) {
                                 processImageFromYPlane(imageProxy);
                             }
@@ -470,7 +530,7 @@ public class MainActivity extends AppCompatActivity implements MeasureFragment.M
             doingDataSample = false;
             sample_stopTime = System.currentTimeMillis();
             HRVMeasurementSystem.HRVMetrics results =
-                    HRVMeasurementSystem.analyzeHRV(dataPointList, 30);
+                    HRVMeasurementSystem.analyzeHRV(dataPointList, activeCameraFps);
 
             if (heartRateTextView != null) {
                 heartRateTextView.setText(results.toString());
